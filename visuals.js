@@ -12,8 +12,28 @@ export const PRESETS={
   tech:{name:'Технологичный',short:'Технологичный',accent:'#ff9e70',note:'Тёмный интерфейс · оранжевый'},
   red:{name:'Чёрно-красный',short:'Чёрно-красный',accent:'#ff4148',note:'Крупный текст · схемы · красный'},
   light:{name:'Светлый',short:'Светлый',accent:'#dc745f',note:'Воздух · блоки · мягкие цвета'},
+  // Стили ghost-editor: свои цвета и эффекты текста на тех же проверенных сценах.
+  'ghost-clean':{name:'Чистый',short:'Чистый',accent:'#ffd23f',note:'Крупные слова · один акцент · без музыки'},
+  'ghost-cinematic':{name:'Кино',short:'Кино',accent:'#e7c27a',note:'Засечки · мягкий свет · редкие сцены'},
+  'ghost-editorial':{name:'Редакционный',short:'Редакционный',accent:'#d13f34',note:'Нижний регистр · подсветка слов'},
+  'ghost-kinetic':{name:'Кинетический',short:'Кинетический',accent:'#ff5a1f',note:'Одно слово — один кадр'},
+  'ghost-launch':{name:'Запуск',short:'Запуск',accent:'#7c5cff',note:'Тёмный интерфейс · моно-метки'},
+  'ghost-meme':{name:'Мем',short:'Мем',accent:'#ffd166',note:'Обводка · крупная реакция'},
+  'ghost-pop':{name:'Журнал',short:'Журнал',accent:'#ff2e88',note:'ЗАГЛАВНЫЕ · цветной блок'},
 };
-const C={premium:{bg:'#0b0d0c',fg:'#f8f4ee',accent:'#dfc49e',muted:'#b9ad9f'},tech:{bg:'#0b0b0e',fg:'#f8f4f1',accent:'#ff9e70',muted:'#b6aaa5'},red:{bg:'#08090b',fg:'#f8f6f3',accent:'#ff4148',muted:'#b2a6a6'},light:{bg:'#f8f0eb',fg:'#17181d',accent:'#dc745f',muted:'#877e7d'}};
+// Styles are systems, not templates: they reuse a base composition but change
+// ink, accent and the way words enter. Nothing on screen is invented by AI.
+const STYLE_BASE={'ghost-clean':'premium','ghost-cinematic':'premium','ghost-editorial':'red','ghost-kinetic':'red','ghost-launch':'tech','ghost-meme':'light','ghost-pop':'light'};
+const basePreset=p=>STYLE_BASE[p]||p;
+const C={premium:{bg:'#0b0d0c',fg:'#f8f4ee',accent:'#dfc49e',muted:'#b9ad9f'},tech:{bg:'#0b0b0e',fg:'#f8f4f1',accent:'#ff9e70',muted:'#b6aaa5'},red:{bg:'#08090b',fg:'#f8f6f3',accent:'#ff4148',muted:'#b2a6a6'},light:{bg:'#f8f0eb',fg:'#17181d',accent:'#dc745f',muted:'#877e7d'},
+  'ghost-clean':{bg:'#0b0d0c',fg:'#f8f4ee',accent:'#ffd23f',muted:'#b9ad9f'},
+  'ghost-cinematic':{bg:'#0f0f10',fg:'#ede6da',accent:'#e7c27a',muted:'#b7ad9e'},
+  'ghost-editorial':{bg:'#08090b',fg:'#f8f6f3',accent:'#d13f34',muted:'#b2a6a6'},
+  'ghost-kinetic':{bg:'#141414',fg:'#fff4df',accent:'#ff5a1f',muted:'#c3bdb3'},
+  'ghost-launch':{bg:'#0e0e12',fg:'#f6f4ff',accent:'#7c5cff',muted:'#b6b2c5'},
+  'ghost-meme':{bg:'#f8f0eb',fg:'#17181d',accent:'#ffd166',muted:'#877e7d'},
+  'ghost-pop':{bg:'#fff0f6',fg:'#111111',accent:'#ff2e88',muted:'#7f6972'}};
+
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 // A deterministic cubic Bézier for the same timing in preview and export.
 // Solve the x coordinate, then evaluate y; this avoids a rendering dependency
@@ -42,6 +62,7 @@ const mixRect=(a,b,t)=>Object.fromEntries(['x','y','w','h','r'].map(k=>[k,mix(a[
 const NORMAL={premium:{x:0,y:0,w:720,h:1280,r:0},tech:{x:20,y:35,w:680,h:1209,r:15},red:{x:0,y:0,w:720,h:1280,r:0},light:{x:28,y:150,w:664,h:1088,r:24}};
 const INTRO={premium:{x:70,y:125,w:580,h:600,r:23},tech:{x:90,y:140,w:540,h:545,r:24},red:{x:55,y:670,w:610,h:520,r:18},light:{x:52,y:736,w:616,h:490,r:28}};
 const GRAPH={premium:{x:70,y:115,w:580,h:580,r:23},tech:{x:74,y:120,w:572,h:550,r:24},red:{x:55,y:690,w:610,h:525,r:18},light:{x:52,y:690,w:616,h:535,r:28}};
+for(const id of Object.keys(STYLE_BASE)){NORMAL[id]=NORMAL[STYLE_BASE[id]];INTRO[id]=INTRO[STYLE_BASE[id]];GRAPH[id]=GRAPH[STYLE_BASE[id]];}
 function rounded(ctx,x,y,w,h,r=0){ctx.beginPath();ctx.roundRect(x,y,Math.max(.01,w),Math.max(.01,h),Math.max(0,r))}
 function line(ctx,x1,y1,x2,y2,color,width=1){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.lineWidth=width;ctx.strokeStyle=color;ctx.stroke()}
 function radial(ctx,x,y,r,color){let g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,color);g.addColorStop(1,'rgba(0,0,0,0)');return g}
@@ -117,7 +138,7 @@ function graphicPhase(active,sourceTime,motion){
   return Math.min(ease(age/.42),smooth((d-age)/.36));
 }
 export function compositionState(preset,opts={}){
-  const p=NORMAL[preset]?preset:'premium',motion=opts.style!=='none',time=Math.max(0,opts.outputT||0);
+  const p=NORMAL[preset]?preset:'premium',base=basePreset(p),motion=opts.style!=='none',time=Math.max(0,opts.outputT||0);
   // Start on the full speaker, then physically move into the title layout.
   // The same state is used in preview and in the MP4 render.
   const intro=String(opts.headline||'').trim()?
@@ -132,10 +153,11 @@ export function compositionState(preset,opts={}){
       active.item.variant==='framed'?GRAPH[p]:{x:145,y:300,w:430,h:430,r:215};
   }
   rect=mixRect(rect,graphRect,graphic);
-  return {rect,intro:intro*(1-graphic),graphic,active,motion,motionStyle:opts.style};
+  return {rect,intro:intro*(1-graphic),graphic,active,motion,motionStyle:opts.style,base,textEffect:opts.textEffect||'clean'};
 }
 export function rectFor(p,opts={}){return compositionState(p,opts).rect}
 export function drawBackground(ctx,preset,clear=true){
+  preset=basePreset(preset);
   const p=C[preset]||C.premium;if(clear)ctx.clearRect(0,0,FW,FH);ctx.fillStyle=p.bg;ctx.fillRect(0,0,FW,FH);
   if(preset==='premium'){
     ctx.fillStyle=radial(ctx,590,270,650,'rgba(127,96,66,.26)');ctx.fillRect(0,0,FW,FH);
@@ -228,8 +250,35 @@ function captionWords(cue){
   if(cue.words?.length===plain.length&&cue.words.every(w=>Number.isFinite(w.start)&&Number.isFinite(w.end)))return cue.words.map((w,i)=>({...w,text:plain[i]}));
   return plain.map((text,i)=>({text,start:cue.start+(cue.end-cue.start)*i/plain.length,end:cue.start+(cue.end-cue.start)*(i+1)/plain.length}));
 }
+// Word treatment from ghost-editor styles. Deterministic: preview and MP4
+// get the same state from the same timestamp, no timers or random values.
+function capWord(text,fx){
+  const s=String(text||'');
+  if(fx==='editorial')return s.toLocaleLowerCase('ru');
+  if(fx==='upper')return s.toLocaleUpperCase('ru');
+  return s;
+}
+function paintCaptionWord(ctx,text,x,y,maxWidth,size,accent,ink,fx,progress,active){
+  const shown=capWord(text,fx);
+  if(fx==='serif')ctx.font=font('premium',size*1.04,600);
+  else ctx.font=sans(size,fx==='outline'?900:800);
+  ctx.save();
+  ctx.globalAlpha*=fx==='type'?progress:fx==='blur'?.35+.65*progress:1;
+  if(fx==='blur'&&progress<.98)ctx.filter=`blur(${((1-progress)*4).toFixed(2)}px)`;
+  if(fx==='pop'&&active){ctx.translate(x+maxWidth/2,y);ctx.scale(1+.08*progress,1+.08*progress);ctx.translate(-x-maxWidth/2,-y)}
+  if(fx==='outline'){
+    ctx.lineWidth=Math.max(2,size*.075);ctx.lineJoin='round';
+    ctx.strokeStyle=active?accent:'rgba(8,8,10,.92)';ctx.strokeText(shown,x,y,maxWidth);
+    ctx.fillStyle=active?accent:'#fff';ctx.fillText(shown,x,y,maxWidth);
+  }else{
+    ctx.fillStyle=active?accent:(ink?'#202027':'#fff');ctx.fillText(shown,x,y,maxWidth);
+    if(fx==='editorial'&&active){ctx.shadowColor='transparent';ctx.fillStyle=accent;ctx.fillRect(x,y+size*.56,maxWidth,2.5)}
+  }
+  ctx.restore();
+}
 function drawCaptions(ctx,cue,t,preset,position,state){
   const all=captionWords(cue);if(!all.length)return;
+  const fx=state.textEffect||'clean';
   const groups=[];let group=[],length=0;for(const word of all){const add=(group.length?1:0)+word.text.length;if(group.length&&length+add>26){groups.push(group);group=[];length=0}group.push(word);length+=(group.length>1?1:0)+word.text.length}if(group.length)groups.push(group);
   let gi=groups.findIndex((g,i)=>t<(groups[i+1]?.[0].start??cue.end));if(gi<0)gi=groups.length-1;const words=groups[gi];
   const entrance=state.motion?ease((t-Math.max(cue.start,words[0].start))/.12):1;
@@ -246,8 +295,8 @@ function drawCaptions(ctx,cue,t,preset,position,state){
   let panel=preset==='light'&&state.intro>.5&&state.graphic<.5&&!state.fullScene;
   if(panel)cy=475;
   let size=panel?38:premiumCard?32:mix(42,preset==='red'?32:34,compact),max=panel?495:(premiumBar||premiumCard)?450:(preset==='light'&&state.graphic>.7)?480:mix(520,560,compact),rows=[];
-  function layout(){ctx.font=sans(size,800);const space=ctx.measureText(' ').width,out=[];let curr=[],width=0;
-    words.forEach((word,i)=>{const ww=Math.min(max,ctx.measureText(word.text).width),add=(curr.length?space:0)+ww;if(curr.length&&width+add>max){out.push({items:curr,width});curr=[];width=0}curr.push({...word,i,width:ww});width+=(curr.length>1?space:0)+ww});if(curr.length)out.push({items:curr,width});return out;}
+  function layout(){ctx.font=fx==='serif'?font('premium',size*1.04,600):sans(size,fx==='outline'?900:800);const space=ctx.measureText(' ').width,out=[];let curr=[],width=0;
+    words.forEach((word,i)=>{const ww=Math.min(max,ctx.measureText(capWord(word.text,fx)).width),add=(curr.length?space:0)+ww;if(curr.length&&width+add>max){out.push({items:curr,width});curr=[];width=0}curr.push({...word,i,width:ww});width+=(curr.length>1?space:0)+ww});if(curr.length)out.push({items:curr,width});return out;}
   do{rows=layout();if(rows.length<=2)break;size-=2}while(size>26);rows=layout();const lh=size*1.22,startY=cy-(rows.length-1)*lh/2;
   ctx.save();ctx.globalAlpha=entrance*transitionVisibility;ctx.translate(0,(1-entrance)*6);
   if(premiumCard){
@@ -266,7 +315,12 @@ function drawCaptions(ctx,cue,t,preset,position,state){
   ctx.font=sans(size,800);ctx.textAlign='left';ctx.textBaseline='middle';ctx.lineJoin='round';
   if(!ink){ctx.shadowColor='rgba(0,0,0,.9)';ctx.shadowBlur=11;ctx.shadowOffsetY=2}
   const space=ctx.measureText(' ').width,accent=C[preset].accent;
-  rows.forEach((r,k)=>{let x=(FW-r.width)/2+(premiumBar?20:0),y=startY+k*lh;r.items.forEach(item=>{ctx.save();ctx.globalAlpha=entrance*transitionVisibility*(hi>=0&&item.i>hi?.65:1);ctx.fillStyle=item.i===hi?accent:(ink?'#202027':'#fff');ctx.fillText(item.text,x,y,item.width);if(item.i===hi&&(preset==='red'||preset==='tech')){ctx.shadowColor='transparent';ctx.fillStyle=accent;ctx.fillRect(x,y+size*.56,item.width,2.5)}ctx.restore();x+=item.width+space})});ctx.restore();
+  rows.forEach((r,k)=>{let x=(FW-r.width)/2+(premiumBar?20:0),y=startY+k*lh;r.items.forEach(item=>{
+    const active=item.i===hi;
+    const progress=state.motion?(fx==='type'?ease((t-item.start)/.12):fx==='blur'?ease((t-item.start)/.16):1):1;
+    ctx.save();ctx.globalAlpha=entrance*transitionVisibility*(hi>=0&&item.i>hi?.65:1);
+    paintCaptionWord(ctx,item.text,x,y,item.width,size,accent,ink,fx,progress,active);
+    ctx.restore();x+=item.width+space})});ctx.restore();
 }
 function smallTag(ctx,text,x,y,preset){ctx.font=sans(17,800);ctx.textBaseline='top';ctx.textAlign='left';ctx.fillStyle=C[preset].accent;ctx.fillText(text.toLocaleUpperCase('ru'),x,y)}
 function actualSteps(g){return String(g.value||'').split('/').map(s=>s.trim()).filter(Boolean).slice(0,3)}
@@ -471,14 +525,14 @@ function drawScene(ctx,active,sourceTime,preset,motion,images,motionStyle){
 }
 export function drawOverlay(ctx,opts,clear=true){
   const {preset,headline,outputT,outputDuration,sourceTime,cue,cueTime,style,graphics,srt,images=[],captionPosition}=opts;
-  if(clear)ctx.clearRect(0,0,FW,FH);const state=compositionState(preset,opts),active=state.active;
+  if(clear)ctx.clearRect(0,0,FW,FH);const state=compositionState(preset,opts),active=state.active,base=state.base;
   if(active?.item.layout==='scene'){
-    drawScene(ctx,active,sourceTime,preset,state.motion,images,state.motionStyle);
+    drawScene(ctx,active,sourceTime,base,state.motion,images,state.motionStyle);
     if(cue)drawCaptions(ctx,cue,cueTime,preset,captionPosition,{...state,fullScene:true,intro:0,graphic:0});
     return;
   }
-  chrome(ctx,preset,state,outputT,outputDuration);introTitle(ctx,preset,headline,state,outputT,outputDuration);
-  drawGraphic(ctx,active,sourceTime,preset,state,images);if(cue)drawCaptions(ctx,cue,cueTime,preset,captionPosition,{...state,heroTitle:!!String(headline||'').trim()&&outputT<3.83});
+  chrome(ctx,base,state,outputT,outputDuration);introTitle(ctx,base,headline,state,outputT,outputDuration);
+  drawGraphic(ctx,active,sourceTime,base,state,images);if(cue)drawCaptions(ctx,cue,cueTime,preset,captionPosition,{...state,heroTitle:!!String(headline||'').trim()&&outputT<3.83});
 }
 export function drawComposition(ctx,sample,sourceT,outputT,settings,styleAt,getCue){
   const {preset,style,start,end,manual,srt,outputDuration,mode,frameZoom,frameX,frameY}=settings;

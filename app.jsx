@@ -21,6 +21,7 @@ import { decodeVoice, outputToSource, voiceMapKey, makeVoiceMix, muxMixedAudio }
 import { LOCAL_VOICES, requestLocalVoice } from "./local-tts.js";
 import { createProjectBlob, readProjectFile, normalizeProjectSettings } from "./project.js";
 import { planTakes, takesToSilences } from "./takes.js";
+import { GHOST_STYLES, styleById, planGhostEdit, buildApprovalSheet, qaGhost, exampleCues } from "./ghost.js";
 import { nearestBeatOutput } from "./beat.js";
 import { convertVideo, MAX_CONVERSION_BYTES } from "./converter.js";
 import {
@@ -292,6 +293,9 @@ function App() {
     ),
     [manual, setManual] = useState(""),
     [preset, setPreset] = useState("premium"),
+    [ghostStyle, setGhostStyle] = useState("clean"),
+    [textEffect, setTextEffect] = useState("clean"),
+    [approved, setApproved] = useState(false),
     [captionPosition, setCaptionPosition] = useState("normal"),
     [headline, setHeadline] = useState(""),
     [srt, setSrt] = useState(null),
@@ -348,10 +352,10 @@ function App() {
       window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true);
   latestRef.current = {source, ready, srt, graphics, headline, start, end, voice};
   const projectSettings = useMemo(() => ({
-    start,end,resolution,mode,frameZoom,frameX,frameY,style,manual,preset,captionPosition,
+    start,end,resolution,mode,frameZoom,frameX,frameY,style,manual,preset,captionPosition,ghostStyle,textEffect,
     headline,autoHeadline:autoHeadlineRef.current || "",srt,graphics,silences,language,asrSource,
     voiceText,voicePreset,voiceOffset,voiceVolume,originalVolume,musicVolume,musicBpm,firstBeat,
-  }), [start,end,resolution,mode,frameZoom,frameX,frameY,style,manual,preset,captionPosition,
+  }), [start,end,resolution,mode,frameZoom,frameX,frameY,style,manual,preset,captionPosition,ghostStyle,textEffect,
     headline,srt,graphics,silences,language,asrSource,voiceText,voicePreset,voiceOffset,
     voiceVolume,originalVolume,musicVolume,musicBpm,firstBeat]);
   const projectSignature = useMemo(() => JSON.stringify({
@@ -377,6 +381,12 @@ function App() {
     graphics: graphics.map(g => ({...g, times: graphicTimes(g, srt),
       hasImage: images.some(i => i.id === g.assetId && i.image)})),
   }), [start, end, headline, srt, cuts, graphics, images]);
+  const absoluteCuts = useMemo(() => cuts.map(c => ({from:c.from + start, to:c.to + start})), [cuts,start]);
+  const approvalSheet = useMemo(() => buildApprovalSheet({cuts:absoluteCuts, graphics, cues:srt?.cues || [], start:0}),
+    [absoluteCuts,graphics,srt]);
+  const ghostWarnings = useMemo(() => qaGhost({cuts:absoluteCuts,graphics,cues:srt?.cues || [],start,end,
+    faceY,captionPosition:effectiveCaptionPosition,approved}),
+    [absoluteCuts,graphics,srt,start,end,faceY,effectiveCaptionPosition,approved]);
   useEffect(() => {
     if (ready && markRestoredRef.current) {
       markRestoredRef.current = false;
@@ -397,7 +407,7 @@ function App() {
   }, [projectSettings, ready]);
   useEffect(() => {
     try { const s = JSON.parse(localStorage.getItem("kadr-autosave-v2") || "null")?.settings; if (!s) return;
-      if (s.preset) setPreset(s.preset); if (s.captionPosition) setCaptionPosition(s.captionPosition);
+      if (s.preset) setPreset(s.preset); if (s.ghostStyle) setGhostStyle(s.ghostStyle); if (s.textEffect) setTextEffect(s.textEffect); if (s.captionPosition) setCaptionPosition(s.captionPosition);
       if (s.style) setStyle(s.style); if (s.mode) setMode(s.mode); if (typeof s.headline === "string") setHeadline(s.headline);
       if (typeof s.manual === "string") setManual(s.manual); if (s.language) setLanguage(s.language);
       if (typeof s.voiceText === "string") setVoiceText(s.voiceText); if (s.voicePreset) setVoicePreset(s.voicePreset);
@@ -552,6 +562,7 @@ function App() {
   function invalidate() {
     setResult(null);
     setMessage(null);
+    setApproved(false);
   }
   function stopAsr(showNotice = true) {
     asrToken.current++;
@@ -901,6 +912,7 @@ function App() {
       setResolution(s.resolution); setMode(s.mode);
       setFrameZoom(s.frameZoom); setFrameX(s.frameX); setFrameY(s.frameY);
       setStyle(s.style); setManual(s.manual); setPreset(s.preset);
+      setGhostStyle(s.ghostStyle || "clean"); setTextEffect(s.textEffect || "clean");
       setCaptionPosition(s.captionPosition); setHeadline(s.headline);
       autoHeadlineRef.current = s.autoHeadline || null;
       setSrt(s.srt); setGraphics(s.graphics); setSilences(s.silences);
@@ -1427,7 +1439,7 @@ function App() {
       // Timestamped speech is a conservative second check: keep, rather than
       // automatically cut, quiet regions touching any subtitle. Timings can be
       // wrong, so this is not a substitute for listening to the result.
-      const plan = planTakes(subtitles.cues, {start: now.start, end: now.end});
+      const plan = planGhostEdit(subtitles.cues, {start: now.start, end: now.end});
       setTakesPlan(plan.sentences.length ? plan : null);
       const takeSilences = takesToSilences(plan);
       const quietGuarded = audio.ranges.map(c => {
@@ -1493,6 +1505,23 @@ function App() {
     } finally {
       if (token === quickToken.current) setQuickBusy(false);
     }
+  }
+  async function applyGhostStyle(id) {
+    const s = styleById(id);
+    if (!ready) await loadDemo();
+    const cues = exampleCues();
+    const suggested = planStoryboard({cues, start:0, end:6, maxScenes:1});
+    setGhostStyle(id);
+    setPreset(`ghost-${id}`);
+    setTextEffect(s.effect);
+    setHeadline(s.sample);
+    setSrt({name:`Пример · ${s.name}`,cues,origin:"example"});
+    setManual("");
+    setGraphics(suggested.scenes.map(scene => ({...newGraphic(scene.kind,scene.at),...scene,auto:true}))
+      .slice(0,1));
+    setStyle(window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "none" : "dynamic");
+    setActiveTab("check");
+    invalidate();
   }
   function cancelQuickDraft() {
     quickToken.current++;
@@ -1996,6 +2025,25 @@ function App() {
                 {takesPlan.sentences.map((s, i) => { const key = String(s.text || "").trim().toLowerCase(); const alt = takesPlan.rejected?.find(r => String(r.text || "").trim().toLowerCase() === key); const isCut = silences.some(c => c.enabled && c.from < s.end && c.to > s.start); return <div className="cut-row take-row" key={i}><span className="take-text">{s.text} <small>дубль {preciseTime(s.start)}</small></span><button type="button" className="text-action" disabled={busy} onClick={() => toggleSentence(s)}>{isCut ? "Вернуть предложение" : "Вырезать предложение"}</button>{alt && <button type="button" className="text-action" disabled={busy} onClick={() => swapTake(s)}>Заменить дубль ({preciseTime(alt.start)})</button>}</div>; })}
               </div>}
             </div>
+            <div className="section template-section" hidden={activeTab !== "check"}>
+              <div className="sec-title">
+                <div className="sec-name"><LuSparkles size={15} /> Шаблоны и эффекты</div>
+              </div>
+              <p className="hint">Стили перенесены из ghost-editor как системы: шрифт, акцент, подача слов и сцены. Нажми карточку — откроется пример на встроенном видео.</p>
+              <div className="template-grid" role="group" aria-label="Стили ghost-editor">
+                {GHOST_STYLES.map(s => (
+                  <button key={s.id} type="button" className={"template-card" + (ghostStyle === s.id ? " active" : "")}
+                    aria-pressed={ghostStyle === s.id} disabled={busy}
+                    onClick={() => applyGhostStyle(s.id)}>
+                    <span className="template-sample" style={{"--fx-accent":s.accent}} data-effect={s.effect}>
+                      <b>{s.sample}</b><i />
+                    </span>
+                    <strong>{s.name}</strong><small>{s.note}</small>
+                  </button>
+                ))}
+              </div>
+              <p className="hint">Слова берутся только из твоих субтитров. Никаких выдуманных фраз, чисел и заявлений.</p>
+            </div>
             <div className="section preset-section" hidden={activeTab !== "check"}>
               <div className="sec-title">
                 <div className="sec-name"><LuSparkles size={15} /> Оформление</div>
@@ -2048,8 +2096,22 @@ function App() {
                     {review.events.length > 24 && <p className="review-more">Показаны первые 24 из {review.events.length} элементов.</p>}
                   </div> : <p className="review-more">Добавь заголовок или графический элемент.</p>}
                 </details>
-                <details className="review-box plan-box"><summary>Лист проверки перед экспортом</summary><div className="review-list"><p className="review-more">Склеек выбрано: {cuts.length}. Элементов в плане (заголовок и графика, включая сцены): {review.events.length}. Предупреждений: {review.warnings.length}. Предложений по дублям: {takesPlan?.sentences?.length || 0}. Просмотри склейки и сцены по списку выше, проверь субтитры и зону лица, затем нажми «Собрать ролик» и «Скачать MP4».</p></div></details>
-                <p className="hint">Подсказки могут ошибаться и не заменяют проверку субтитров, лица и склеек просмотром. Экспорт не блокируется.</p>
+                <details className="review-box plan-box"><summary>Лист проверки ghost-editor <span>{approvalSheet.length}</span></summary>
+                  {approvalSheet.length ? <div className="review-list" aria-label="Кадры на склейках и сценах">
+                    {approvalSheet.map((point,i) => <button type="button" className="review-row" key={`${point.kind}-${i}`}
+                      disabled={busy} onClick={() => jumpTo(point.time)}>
+                      <span className="review-time">{preciseTime(point.time)}</span>
+                      <span><strong>{point.title}</strong><small>{point.detail}</small></span>
+                    </button>)}
+                  </div> : <p className="review-more">Склеек и сцен нет — лист проверки пуст.</p>}
+                </details>
+                {ghostWarnings.length > 0 && <div className="review-note" role="status">
+                  {ghostWarnings.map((w,i) => <p key={`${w.code}-${i}`}><strong>{w.title}.</strong> {w.detail}</p>)}
+                </div>}
+                <label className="voice-consent"><input type="checkbox" checked={approved} disabled={busy}
+                  onChange={e => setApproved(e.target.checked)} />
+                  <span>Я просмотрел(а) склейки и сцены из листа проверки, текст и зону лица.</span></label>
+                <p className="hint">Согласие нужно перед сборкой, как в ghost-editor. Проверка по таймингам не заменяет просмотр готового ролика.</p>
               </>}
             </div>
             {activeTab !== "export" && <div className="next-step">
@@ -2078,7 +2140,8 @@ function App() {
                 <button
                   className="primary"
                   onClick={busy ? () => abortRef.current?.() : exportClip}
-                  disabled={(!ready && !busy) || voiceBusy || musicBusy || analysisBusy || asrBusy || draftBusy || quickBusy}
+                  disabled={(!ready && !busy) || voiceBusy || musicBusy || analysisBusy || asrBusy || draftBusy || quickBusy ||
+                    (!busy && approvalSheet.length > 0 && !approved)}
                 >
                   {busy ? (
                     <>

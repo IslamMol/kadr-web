@@ -1,9 +1,12 @@
 // Кадр 2.0: монтаж по словам, без нейросети.
-// Правила из take-selection.md ghost-editor: лучший дубль каждого предложения,
-// резка по словам, длинные паузы внутри дубля ужимаются до 0,2 с.
+// Локальный порт правил ghost-editor/references/take-selection.md:
+// лучший дубль каждого предложения, поздний дубль при равенстве, резка по
+// словам, паузы >1 с внутри дубля ужимаются, короткие паузы остаются.
 const norm = (s) => String(s || "").toLocaleLowerCase("ru").replace(/ё/g, "е").replace(/[^a-zа-яё0-9]+/gi, " ").trim();
 const snap = (t) => Math.round(t * 30) / 30;
 const isEnd = (w) => /[.!?…]$/.test(w.text || "");
+const FILLER = new Set("э м мм ну аа какбы типа короче значит".split(" "));
+const RESTART = /(ещ[её] раз|опять|с начала|давай снова|окей агайн|okay again|сначала)/iu;
 
 export function wordsFromCues(cues = []) {
   const out = [];
@@ -46,15 +49,32 @@ function scoreTake(s) {
   for (let i = 1; i < s.words.length; i++) maxGap = Math.max(maxGap, s.words[i].start - s.words[i - 1].end);
   if (maxGap < 0.5) score += 2;
   else if (maxGap < 1) score += 1;
+  // ghost-editor: later takes are usually warmer; restarts and fillers are not takes.
   score += Math.min(1, s.start / 60);
+  if (RESTART.test(s.text)) score -= 4;
+  const filler = s.words.filter((w) => FILLER.has(norm(w.text))).length;
+  score -= filler * .75;
   return score;
+}
+
+// Sentences said in one breath stay one take: one cut instead of four.
+function groupedRuns(sentences) {
+  const runs = [];
+  for (const s of sentences) {
+    const last = runs[runs.length - 1];
+    if (last && s.start - last.end < .35 && !RESTART.test(s.text) && !RESTART.test(last.text)) {
+      last.end = s.end;
+      last.sentences.push(s);
+    } else runs.push({ start: s.start, end: s.end, sentences: [s] });
+  }
+  return runs;
 }
 
 export function planTakes(cues, opts = {}) {
   const start = Number(opts.start) || 0;
   const end = Number.isFinite(opts.end) ? Number(opts.end) : Infinity;
   const words = wordsFromCues(cues).filter((w) => w.end > start && w.start < end);
-  if (!words.length) return { pieces: [], cuts: [], sentences: [], rejected: [] };
+  if (!words.length) return { pieces: [], cuts: [], sentences: [], rejected: [], runs: [], notes: [] };
   const sentences = sentencesFromWords(words);
   const groups = new Map();
   for (const s of sentences) {
@@ -100,6 +120,7 @@ export function planTakes(cues, opts = {}) {
   }
   for (const s of chosen) {
     for (let i = 1; i < s.words.length; i++) {
+      // Under 0.5 s is the speaker's rhythm; over 1 s can be removed.
       if (s.words[i].start - s.words[i - 1].end > 1) addCut(s.words[i - 1].end + 0.1, s.words[i].start - 0.1);
     }
   }
@@ -110,7 +131,12 @@ export function planTakes(cues, opts = {}) {
     if (last && c.from <= last.to) last.to = Math.max(last.to, c.to);
     else merged.push({ from: c.from, to: c.to });
   }
-  return { pieces, cuts: merged, sentences: chosen, rejected };
+  const runs = groupedRuns(chosen);
+  const notes = [];
+  if (rejected.length) notes.push(`Отклонённых дублей: ${rejected.length}. Каждое предложение оставлено в одном экземпляре.`);
+  if (runs.length < chosen.length) notes.push(`Непрерывных сцен в одном дыхании: ${runs.length} вместо ${chosen.length} — склеек меньше.`);
+  if (merged.length) notes.push(`Склейки по словам: ${merged.length}. Паузы короче 0,5 с оставлены как ритм речи.`);
+  return { pieces, cuts: merged, sentences: chosen, rejected, runs, notes };
 }
 
 export function takesToSilences(plan) {
