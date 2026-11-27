@@ -171,6 +171,15 @@ export function outputTimeForSource(edl, sourceT) {
   return t < (edl.spans[0]?.clip.in ?? 0) ? 0 : edl.duration;
 }
 
+// Null in a removed gap. Needed by the encoder: frames between chosen takes
+// must be skipped entirely instead of becoming a duplicate of the last frame.
+export function sourceSpanAt(edl, sourceT) {
+  const t = Number(sourceT) || 0;
+  for (const s of edl.spans) if (t >= s.clip.in && t < s.clip.out)
+    return { span: s, outputT: s.start + (t - s.clip.in) };
+  return null;
+}
+
 // Transcribe on the source timeline, then map words to the cut timeline.
 export function mapCuesToOutput(edl, cues = []) {
   return cues.flatMap((cue) => {

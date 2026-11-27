@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {
-  normalizeEdl, frameState, sourceTimeAt, outputTimeForSource,
+  normalizeEdl, frameState, sourceTimeAt, outputTimeForSource, sourceSpanAt,
   mapCuesToOutput, hashEdl, serializeEdl,
 } from "./edl.js";
 
@@ -22,6 +22,8 @@ assert.equal(edl.spans.length, 2);
 assert.equal(sourceTimeAt(edl, 0), 2, "начала первого фрагмента");
 assert.equal(sourceTimeAt(edl, 3.2), 10.2, "второй фрагмент мапится в исходник");
 assert.equal(outputTimeForSource(edl, 4), 2, "обратное преобразование времени");
+assert.equal(sourceSpanAt(edl, 4)?.outputT, 2);
+assert.equal(sourceSpanAt(edl, 7), null, "удалённый участок не даёт кадр");
 assert.equal(frameState(edl, 3.49).frame, 105);
 assert.equal(frameState(edl, 1).cue?.text, "Вторая фраза");
 assert.equal(frameState(edl, 1).graphic?.label, "Цитата");

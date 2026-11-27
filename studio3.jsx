@@ -6,16 +6,18 @@ import {
 } from "mediabunny";
 import { registerAacEncoder } from "@mediabunny/aac-encoder";
 import {
-  normalizeEdl, outputTimeForSource, frameState, LOOKS, CAPTION_TEMPLATES,
+  normalizeEdl, outputTimeForSource, sourceTimeAt, sourceSpanAt, frameState, mapCuesToOutput, LOOKS, CAPTION_TEMPLATES,
 } from "./edl.js";
 import { renderFrame } from "./frame.js";
-import { GHOST_RECIPES, styleById } from "./ghost.js";
+import { GHOST_RECIPES, styleById, planGhostEdit } from "./ghost.js";
+import { createASRWorker, wordsToCues } from "./asr.js";
 
 const $ = (s) => document.querySelector(s);
 const W = 1080, H = 1920;
 const state = {
   file: null, url: null, video: null, duration: 0, edl: null,
   t: 0, playing: false, recipe: "clean", look: "clean", busy: false, conversion: null, result: null,
+  cues: null, excluded: new Set(), asrBusy: false, asrWorker: null,
 };
 
 const LOOK_MAP = { clean: "clean", cinematic: "cinematic", editorial: "editorial", kinetic: "kinetic", launch: "launch", meme: "magazine", pop: "magazine" };
@@ -33,42 +35,141 @@ function buildEdl() {
   const rawEnd = Number($("#out")?.value);
   const end = Number.isFinite(rawEnd) && rawEnd > start ? Math.min(rawEnd, state.duration || rawEnd) : (state.duration || 6);
   const span = Math.max(0.2, end - start);
-  const lines = ($("#words")?.value || "").split(/\n+/).map(s => s.trim()).filter(Boolean).slice(0, 30);
-  const step = lines.length ? span / lines.length : 0;
   const s = styleById(state.recipe);
   const template = CAP_MAP[s.effect] || "clean";
-  const cues = lines.map((text, i) => ({
-    id: `cue-${i + 1}`, start: i * step, end: (i + 1) * step,
-    text, template, keyword: text.split(/\s+/)[0] || "",
-    words: text.split(/\s+/).filter(Boolean).map((w, n, all) => ({
-      text: w, start: i * step + step * n / all.length, end: i * step + step * (n + 1) / all.length,
-    })),
-  }));
   const preset = LOOK_MAP[state.look] || "clean";
   const lookStyle = styleById(state.look);
   const grain = lookStyle.film === "film" ? 0.16 : lookStyle.film === "grain" ? 0.08 : 0;
+  const look = { preset, accent: lookStyle.accent, grain, vignette: preset === "cinematic" ? 0.4 : 0.14 };
   const graphicType = ["quote", "number", "diagram"].includes(s.scene) ? s.scene : "quote";
+  let clips, cues;
+
+  if (state.cues?.length) {
+    // Слова с таймингами: убираем дубли по правилам ghost-editor и режем по словам.
+    const selected = state.cues.filter(c =>
+      !state.excluded.has(c.id) && c.end > start && c.start < end);
+    const plan = planGhostEdit(selected, { start, end });
+    const pieces = (plan.pieces.length ? plan.pieces : [{ from: start, to: end }])
+      .slice().sort((a, b) => a.from - b.from);
+    clips = pieces.map((p, i) => ({
+      id: `take-${i + 1}`, src: "video",
+      in: Math.max(start, p.from), out: Math.min(end, Math.max(p.from + 0.04, p.to)),
+    })).filter(c => c.out > c.in);
+    if (!clips.length) clips = [{ id: "main", src: "video", in: start, out: end }];
+    const base = normalizeEdl({ output: { width: W, height: H, fps: 30 }, clips, look });
+    cues = mapCuesToOutput(base, (plan.sentences.length ? plan.sentences : selected).map(c => ({
+      ...c, template, keyword: String(c.text || "").split(/\s+/)[0] || "",
+    })));
+  } else {
+    // Ручной режим: фразы распределяются равномерно по выбранному куску.
+    const lines = ($("#words")?.value || "").split(/\n+/).map(x => x.trim()).filter(Boolean).slice(0, 30);
+    const step = lines.length ? span / lines.length : 0;
+    clips = [{ id: "main", src: "video", in: start, out: end }];
+    cues = lines.map((text, i) => ({
+      id: `cue-${i + 1}`, start: i * step, end: (i + 1) * step,
+      text, template, keyword: text.split(/\s+/)[0] || "",
+      words: text.split(/\s+/).filter(Boolean).map((w, n, all) => ({
+        text: w, start: i * step + step * n / all.length, end: i * step + step * (n + 1) / all.length,
+      })),
+    }));
+  }
+
+  const finalSpan = clips.reduce((sum, c) => sum + (c.out - c.in), 0);
   const graphics = cues.length ? [{
-    id: "beat", type: graphicType, at: span * 0.55, duration: Math.min(2.6, span * 0.4),
-    label: graphicType === "number" ? String(cues.length) + " фразы" : cues[0].text,
+    id: "beat", type: graphicType, at: finalSpan * 0.55, duration: Math.min(2.6, finalSpan * 0.4),
+    label: graphicType === "number" ? String(cues.length) + " фраз" : cues[0].text,
     value: String(cues.length), steps: cues.slice(0, 4).map(c => c.text), template,
   }] : [];
   const motion = s.kinetic === "headline" ? [] : [{
     id: "motion", type: s.kinetic === "spring" ? "word-slam" : s.kinetic === "scramble" ? "spring" : "rise",
-    at: 0, duration: Math.min(0.8, span * 0.3),
+    at: 0, duration: Math.min(0.8, finalSpan * 0.3),
   }];
+
   state.edl = normalizeEdl({
-    name: "Кадр 3.0",
-    output: { width: W, height: H, fps: 30 },
-    clips: [{ id: "main", src: "video", in: start, out: end }],
-    captions: cues, graphics, motion,
-    look: { preset, accent: lookStyle.accent, grain, vignette: preset === "cinematic" ? 0.4 : 0.14 },
+    name: "Кадр 3.0", output: { width: W, height: H, fps: 30 },
+    clips, captions: cues, graphics, motion, look,
   });
   state.t = 0;
   $("#range").max = String(Math.max(0.1, state.edl.duration));
   $("#range").value = "0";
-  $("#status").textContent = `Готово: ${state.edl.duration.toFixed(1)} с, ${cues.length} фраз, ${graphics.length} сцена.`;
+  $("#status").textContent = `Готово: ${state.edl.duration.toFixed(1)} с, ${clips.length} склеек, ${cues.length} фраз, ${graphics.length} сцена.`;
+  renderCues();
   draw();
+}
+
+function renderCues() {
+  const box = $("#cues");
+  if (!state.cues?.length) { box.innerHTML = ""; return; }
+  box.innerHTML = state.cues.map((c, i) =>
+    `<label class="cue-row"><input type="checkbox" data-cue="${c.id}" ${state.excluded.has(c.id) ? "" : "checked"}><span>${String(c.text || "").slice(0, 90)}</span><time>${c.start.toFixed(1)}с</time></label>`
+  ).join("");
+}
+
+function parseSrt(raw) {
+  const blocks = String(raw || "").replace(/\r/g, "").trim().split(/\n\s*\n+/);
+  return blocks.flatMap((b, i) => {
+    const lines = b.split("\n").filter(Boolean);
+    const time = lines.find(l => l.includes("-->"));
+    if (!time) return [];
+    const [a, z] = time.split("-->").map(t => t.trim().replace(",", "."));
+    const sec = (x) => {
+      const p = x.split(":").map(Number);
+      return p.length === 3 ? p[0] * 3600 + p[1] * 60 + p[2] : p.length === 2 ? p[0] * 60 + p[1] : 0;
+    };
+    const start = sec(a), end = sec(z);
+    if (!(end > start)) return [];
+    const words = lines.filter(l => l !== time && !/^\d+$/.test(l.trim()))
+      .join(" ").trim().split(/\s+/).filter(Boolean);
+    const step = (end - start) / Math.max(1, words.length);
+    return [{
+      id: `srt-${i + 1}`, start, end, text: words.join(" "),
+      words: words.map((text, n) => ({ text, start: start + step * n, end: start + step * (n + 1) })),
+    }];
+  });
+}
+
+async function transcribe() {
+  if (!state.file || state.asrBusy) return;
+  state.asrBusy = true;
+  const btn = $("#asr"); btn.disabled = true; btn.textContent = "Загружаем модель…";
+  let ctx;
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx || !window.OfflineAudioContext || !window.Worker)
+      throw new Error("Для распознавания нужен актуальный Chrome или Edge на компьютере.");
+    ctx = new AudioCtx();
+    let decoded;
+    try { decoded = await ctx.decodeAudioData(await state.file.arrayBuffer()); }
+    catch { throw new Error("Не удалось прочитать звук. Нужен MP4 с AAC, WAV или загрузи SRT."); }
+    const offline = new OfflineAudioContext(1, Math.max(1, Math.ceil(decoded.duration * 16000)), 16000);
+    const node = offline.createBufferSource();
+    node.buffer = decoded; node.connect(offline.destination); node.start();
+    const rendered = await offline.startRendering();
+    const audio = rendered.getChannelData(0).slice();
+    try { await ctx.close(); } catch {} ctx = null;
+    const { worker, revoke } = createASRWorker();
+    state.asrWorker = worker;
+    const result = await new Promise((resolve, reject) => {
+      worker.onmessage = ({ data }) => {
+        if (data.type === "recognizing") btn.textContent = "Распознаём речь…";
+        else if (data.type === "complete") { worker.terminate(); revoke(); resolve(data.result); }
+        else if (data.type === "error") { worker.terminate(); revoke(); reject(new Error("Не удалось запустить модель. Проверь интернет; можно загрузить SRT.")); }
+      };
+      worker.onerror = () => { worker.terminate(); revoke(); reject(new Error("Модель не запустилась. Проверь интернет и память.")); };
+      worker.postMessage({ audio, language: $("#language").value }, [audio.buffer]);
+    });
+    const parsed = wordsToCues(result, state.duration);
+    state.cues = parsed.cues; state.excluded = new Set();
+    $("#words").value = parsed.cues.map(c => c.text).join("\n");
+    $("#status").textContent = `Распознано ${parsed.cues.length} фраз со словами. Дубли убираются автоматически.`;
+    buildEdl();
+  } catch (e) {
+    $("#status").textContent = e?.message || "Не удалось распознать речь.";
+  } finally {
+    if (ctx) { try { await ctx.close(); } catch {} }
+    state.asrBusy = false; state.asrWorker = null;
+    btn.disabled = false; btn.textContent = "Распознать речь";
+  }
 }
 
 function draw() {
@@ -90,6 +191,7 @@ async function loadFile(file) {
   state.url = URL.createObjectURL(file);
   const video = document.createElement("video");
   video.src = state.url; video.muted = true; video.playsInline = true; video.preload = "metadata";
+  video.onseeked = () => draw();
   await new Promise((res, rej) => {
     video.onloadedmetadata = res;
     video.onerror = () => rej(new Error("Не удалось прочитать видео. Попробуй MP4 или WebM."));
@@ -115,7 +217,9 @@ async function exportMp4() {
     if (!track) throw new Error("В файле нет видеодорожки.");
     if (!(await canEncodeAudio("aac"))) registerAacEncoder();
     const output = new Output({ format: new Mp4OutputFormat({ fastStart: "in-memory" }), target: new BufferTarget() });
-    const clip = state.edl.clips[0];
+    const clips = state.edl.clips;
+    const sourceStart = Math.min(...clips.map(c => c.in));
+    const sourceEnd = Math.max(...clips.map(c => c.out));
     const canvas = document.createElement("canvas"); canvas.width = W; canvas.height = H;
     const ctx = canvas.getContext("2d", { alpha: false });
     const video = {
@@ -123,9 +227,11 @@ async function exportMp4() {
       processedWidth: W, processedHeight: H, frameRate: 30, bitrate: 7_000_000,
       allowRotationMetadata: false,
       process: (sample) => {
-        const sourceT = sample.timestamp;
-        if (sourceT < clip.in || sourceT >= clip.out) return null;
-        const outputT = outputTimeForSource(state.edl, sourceT);
+        // Mediabunny给出了 trim 之后的相对时间；EDL 用绝对源时间。
+        const absoluteT = sample.timestamp + sourceStart;
+        const hit = sourceSpanAt(state.edl, absoluteT);
+        if (!hit) return null;
+        const outputT = hit.outputT;
         renderFrame(ctx, state.edl, outputT, {
           video: { draw(c, rect) { sample.draw(c, rect.x, rect.y, rect.w, rect.h); } },
         });
@@ -134,7 +240,7 @@ async function exportMp4() {
     };
     conversion = await Conversion.init({
       input, output, tracks: "primary",
-      trim: { start: clip.in, end: clip.out },
+      trim: { start: sourceStart, end: sourceEnd },
       video,
       audio: { codec: "aac", bitrate: 128_000 },
       showWarnings: false,
@@ -170,6 +276,24 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#file").addEventListener("change", e => loadFile(e.target.files?.[0]).catch(err => { $("#status").textContent = err.message; }));
   $("#build").addEventListener("click", buildEdl);
   $("#export").addEventListener("click", exportMp4);
+  $("#asr").addEventListener("click", transcribe);
+  $("#srt-load").addEventListener("click", () => $("#srt").click());
+  $("#srt").addEventListener("change", e => {
+    const file = e.target.files?.[0]; if (!file) return;
+    file.text().then(raw => {
+      const cues = parseSrt(raw).filter(c => c.start < (state.duration || Infinity));
+      if (!cues.length) throw new Error("В SRT не найдено фраз с таймингом.");
+      state.cues = cues; state.excluded = new Set();
+      $("#words").value = cues.map(c => c.text).join("\n");
+      $("#status").textContent = `SRT загружен: ${cues.length} фраз.`;
+      buildEdl();
+    }).catch(err => { $("#status").textContent = err.message || "Не удалось прочитать SRT."; });
+  });
+  $("#cues").addEventListener("change", e => {
+    const id = e.target.dataset.cue; if (!id) return;
+    if (e.target.checked) state.excluded.delete(id); else state.excluded.add(id);
+    buildEdl();
+  });
   $("#recipes").addEventListener("click", e => {
     const b = e.target.closest("[data-recipe]"); if (!b) return;
     state.recipe = b.dataset.recipe;
@@ -182,16 +306,22 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll("[data-look]").forEach(x => x.classList.toggle("active", x === b));
     buildEdl();
   });
-  $("#range").addEventListener("input", e => { state.t = Number(e.target.value); draw(); });
+  $("#range").addEventListener("input", e => {
+    state.t = Number(e.target.value);
+    if (state.video && !state.playing && state.edl) state.video.currentTime = sourceTimeAt(state.edl, state.t);
+    draw();
+  });
   $("#play").addEventListener("click", () => {
     if (!state.video || !state.edl) return;
-    const v = state.video, clip = state.edl.clips[0];
+    const v = state.video;
     if (!state.playing) {
-      v.currentTime = clip.in + state.t; v.play();
+      v.currentTime = sourceTimeAt(state.edl, state.t); v.play();
       state.playing = true; $("#play").textContent = "Пауза";
       const tick = () => {
         if (!state.playing) return;
-        state.t = Math.max(0, Math.min(state.edl.duration, v.currentTime - clip.in));
+        const mapped = outputTimeForSource(state.edl, v.currentTime);
+        if (Math.abs(mapped - state.t) > 0.12) v.currentTime = sourceTimeAt(state.edl, Math.min(state.edl.duration, state.t + 1 / 30));
+        state.t = Math.max(0, Math.min(state.edl.duration, mapped));
         $("#range").value = String(state.t); draw();
         if (state.t >= state.edl.duration - 0.02) { v.pause(); state.playing = false; $("#play").textContent = "Играть"; return; }
         requestAnimationFrame(tick);
