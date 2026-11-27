@@ -15,6 +15,7 @@ import { KADR_TEMPLATES, KADR_EXAMPLES, templateById, planBeats } from "./templa
 import { createProject3, readProject3 } from "./project3.js";
 import { buildApprovalSheet, qaApproval } from "./approval.js";
 import { wordBoundaries, snapTime } from "./snap.js";
+import { icon, hydrateIcons } from "./icons.js";
 
 const $ = (s) => document.querySelector(s);
 const W = 1080, H = 1920;
@@ -138,8 +139,8 @@ function renderScenes() {
       <input type="number" step="0.1" min="0" aria-label="Время сцены" data-field="at" value="${g.at.toFixed(2)}">
       <input type="text" aria-label="Текст сцены" data-field="label" value="${esc(g.label)}">
       <select aria-label="Тип сцены" data-field="type">${GRAPHIC_TYPES.map(t => `<option value="${t}" ${g.type === t ? "selected" : ""}>${t}</option>`).join("")}</select>
-      <button type="button" class="small" data-act="jump">→</button>
-      <button type="button" class="small" data-act="delete">×</button>
+      <button type="button" class="small icon-btn" data-act="jump" aria-label="Перейти к сцене">${icon("arrow", 14)}</button>
+      <button type="button" class="small icon-btn" data-act="delete" aria-label="Удалить сцену">${icon("trash", 14)}</button>
     </div>`).join("");
 }
 
@@ -258,7 +259,7 @@ function renderApproval() {
   const warnBox = $("#approval-warnings");
   if (warnBox) warnBox.innerHTML = warnings.map(w => `<p><strong>${esc(w.title)}.</strong> ${esc(w.detail)}</p>`).join("");
   const summary = $("#approval-box summary");
-  if (summary) summary.textContent = `Лист проверки перед сборкой · ${sheet.length}`;
+  if (summary) summary.innerHTML = `${icon("check", 14)} Лист проверки перед сборкой · ${sheet.length}`;
   const btn = $("#export");
   if (btn) btn.disabled = sheet.length > 0 && !state.approved;
 }
@@ -334,7 +335,7 @@ function parseSrt(raw) {
 async function transcribe() {
   if (!state.file || state.asrBusy) return;
   state.asrBusy = true;
-  const btn = $("#asr"); btn.disabled = true; btn.textContent = "Загружаем модель…";
+  const btn = $("#asr"); btn.disabled = true; btn.innerHTML = `${icon("clock", 14)} Загружаем модель…`;
   let ctx;
   try {
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -354,7 +355,7 @@ async function transcribe() {
     state.asrWorker = worker;
     const result = await new Promise((resolve, reject) => {
       worker.onmessage = ({ data }) => {
-        if (data.type === "recognizing") btn.textContent = "Распознаём речь…";
+        if (data.type === "recognizing") btn.innerHTML = `${icon("mic", 14)} Распознаём речь…`;
         else if (data.type === "complete") { worker.terminate(); revoke(); resolve(data.result); }
         else if (data.type === "error") { worker.terminate(); revoke(); reject(new Error("Не удалось запустить модель. Проверь интернет; можно загрузить SRT.")); }
       };
@@ -371,7 +372,7 @@ async function transcribe() {
   } finally {
     if (ctx) { try { await ctx.close(); } catch {} }
     state.asrBusy = false; state.asrWorker = null;
-    btn.disabled = false; btn.textContent = "Распознать речь";
+    btn.disabled = false; btn.innerHTML = `${icon("mic", 14)} Распознать речь`;
   }
 }
 
@@ -416,7 +417,7 @@ async function exportMp4() {
     return;
   }
   state.busy = true;
-  const btn = $("#export"); btn.disabled = true; btn.textContent = "Собираем…";
+  const btn = $("#export"); btn.disabled = true; btn.innerHTML = `${icon("clock", 16)} Собираем…`;
   $("#progress").style.display = "block";
   let conversion = null;
   try {
@@ -470,7 +471,7 @@ async function exportMp4() {
     $("#status").textContent = e?.message || "Не удалось собрать ролик.";
   } finally {
     state.busy = false; state.conversion = conversion;
-    btn.disabled = false; btn.textContent = "Собрать MP4";
+    btn.disabled = false; btn.innerHTML = `${icon("sparkles", 16)} Собрать MP4`;
     $("#progress").style.display = "none";
   }
 }
@@ -563,6 +564,7 @@ async function loadExample(id) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  hydrateIcons(document);
   window.__kadr3 = state; // debugging / tests: живой EDL доступен из консоли
   const families = ["Все", ...new Set(KADR_TEMPLATES.map(t => t.family.split("·")[0].trim()))];
   $("#filters").innerHTML = families.map((name, i) =>
@@ -658,19 +660,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const v = state.video;
     if (!state.playing) {
       v.currentTime = sourceTimeAt(state.edl, state.t); v.play();
-      state.playing = true; $("#play").textContent = "Пауза";
+      state.playing = true; $("#play").innerHTML = `${icon("pause", 14)} Пауза`;
       const tick = () => {
         if (!state.playing) return;
         const mapped = outputTimeForSource(state.edl, v.currentTime);
         if (Math.abs(mapped - state.t) > 0.12) v.currentTime = sourceTimeAt(state.edl, Math.min(state.edl.duration, state.t + 1 / 30));
         state.t = Math.max(0, Math.min(state.edl.duration, mapped));
         $("#range").value = String(state.t); draw();
-        if (state.t >= state.edl.duration - 0.02) { v.pause(); state.playing = false; $("#play").textContent = "Играть"; return; }
+        if (state.t >= state.edl.duration - 0.02) { v.pause(); state.playing = false; $("#play").innerHTML = `${icon("play", 14)} Играть`; return; }
         requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
     } else {
-      v.pause(); state.playing = false; $("#play").textContent = "Играть";
+      v.pause(); state.playing = false; $("#play").innerHTML = `${icon("play", 14)} Играть`;
     }
   });
   document.querySelector('[data-template="clean"]')?.classList.add("active");
