@@ -1,7 +1,7 @@
 // Cache only the app shell; user video, audio, projects and external model
 // requests are never stored by this service worker.
 const prefix = 'kadr-shell:' + self.registration.scope + ':';
-const cacheName = prefix + '6013200ce8b34486';
+const cacheName = prefix + 'fdbaf489eca4f9f4';
 const root = new URL('./',self.registration.scope).href;
 const shell = ['', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png',
   'icons/icon-maskable-512.png', 'icons/apple-touch-icon.png'].map(x => new URL(x,root).href);
