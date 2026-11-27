@@ -9,6 +9,18 @@ SITE = ROOT / 'site'
 OUT = ROOT / 'desktop' / 'kadr-desktop.zip'
 FFMPEG_FIXED = Path(r'C:\Users\UAQ\AppData\Local\Microsoft\WinGet\Packages\Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe\ffmpeg-9.1-full_build\bin\ffmpeg.exe')
 
+LAUNCHER3 = r'''@echo off
+setlocal
+set "APP=%~dp0studio3.html"
+set "URL=file:///%APP:\=/%"
+set "BROWSER="
+for /f "tokens=2*" %%A in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe" /ve 2^>nul') do set "BROWSER=%%B"
+if not defined BROWSER for /f "tokens=2*" %%A in ('reg query "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe" /ve 2^>nul') do set "BROWSER=%%B"
+if not defined BROWSER for /f "tokens=2*" %%A in ('reg query "HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe" /ve 2^>nul') do set "BROWSER=%%B"
+if not defined BROWSER for /f "tokens=2*" %%A in ('reg query "HKCU\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\msedge.exe" /ve 2^>nul') do set "BROWSER=%%B"
+if defined BROWSER (start "" "%BROWSER%" --app="%URL%") else (start "" "%APP%")
+'''
+
 LAUNCHER = r'''@echo off
 setlocal
 set "APP=%~dp0index.html"
@@ -49,6 +61,7 @@ def main():
             if f.is_file() and 'desktop' not in f.relative_to(SITE).parts:
                 z.write(f, arcname=str(f.relative_to(SITE)))
         z.writestr('kadr.bat', LAUNCHER)
+        z.writestr('kadr3.bat', LAUNCHER3)
         if ffmpeg:
             z.write(ffmpeg, arcname='ffmpeg.exe')
         else:

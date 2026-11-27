@@ -2199,7 +2199,7 @@ function App() {
         </div>
         <div className="footnote">
           <span>Проверь текст, склейки и готовый ролик перед публикацией.</span>
-          <span><a href="./studio3.html">Новая студия 3.0</a> · <a href="./desktop/kadr-desktop.zip" download>Скачать для Windows</a>
+          <span><a href="./studio3.html">Новая студия 3.0</a> · <a href="https://github.com/IslamMol/kadr-web/releases/latest/download/kadr-desktop.zip">Скачать для Windows</a>
             {location.protocol !== "file:" && <> · <a href="./LICENSES.txt" target="_blank" rel="noreferrer">Лицензии</a></>}
           </span>
         </div>

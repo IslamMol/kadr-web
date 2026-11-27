@@ -3,7 +3,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 .shell{max-width:1180px;margin:0 auto;padding:18px}
 header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
 header b{font-size:18px;letter-spacing:-.02em}
-.badge{font-size:11px;color:#aab2c0;border:1px solid #2a2d35;padding:4px 8px;border-radius:999px}
+.badge{font-size:11px;color:#aab2c0;border:1px solid #2a2d35;padding:4px 8px;border-radius:999px;text-decoration:none}a.badge:hover{border-color:#8fa4ff;color:#d8e0ff}
 .grid{display:grid;grid-template-columns:minmax(260px,420px) 1fr;gap:18px;align-items:start}
 @media(max-width:820px){.grid{grid-template-columns:1fr}}
 .panel{background:#17191e;border:1px solid #272a31;border-radius:18px;padding:16px;display:grid;gap:12px}
