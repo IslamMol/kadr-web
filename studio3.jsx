@@ -475,6 +475,70 @@ async function exportMp4() {
   }
 }
 
+// Живые превью шаблонов: тот же renderFrame, что и в экспорте.
+// Это не картинки-заглушки — каждый кадр собран из EDL шаблона.
+function previewSource(ctx, rect) {
+  const g = ctx.createLinearGradient(0, rect.y, 0, rect.y + rect.h);
+  g.addColorStop(0, "#3b5364"); g.addColorStop(1, "#101821");
+  ctx.fillStyle = g; ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
+  ctx.fillStyle = "rgba(226,188,150,.88)";
+  ctx.beginPath(); ctx.arc(rect.x + rect.w * .5, rect.y + rect.h * .42, rect.w * .17, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = "rgba(24,31,41,.95)";
+  ctx.beginPath(); ctx.arc(rect.x + rect.w * .5, rect.y + rect.h * .84, rect.w * .36, Math.PI, 0); ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,.10)";
+  ctx.fillRect(rect.x, rect.y + rect.h * .12, rect.w, 2);
+}
+
+function previewEdl(tpl, cues) {
+  const grain = ["cinematic", "halftone", "ink", "graph"].includes(tpl.look) ? 0.12 : 0.04;
+  return normalizeEdl({
+    output: { width: 540, height: 960, fps: 30 },
+    clips: [{ id: "preview", src: "video", in: 0, out: 2.6 }],
+    captions: cues.map(c => ({ ...c, template: tpl.caption })),
+    graphics: planBeats(cues, tpl.id),
+    look: { preset: tpl.look, accent: tpl.accent, grain, vignette: 0.18 },
+  });
+}
+
+function drawPreview(canvas, edl, t) {
+  if (!canvas) return;
+  try {
+    const off = document.createElement("canvas");
+    off.width = edl.output.width; off.height = edl.output.height;
+    renderFrame(off.getContext("2d"), edl, t, { video: { draw: previewSource } });
+    const ctx = canvas.getContext("2d");
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(off, 0, 0, canvas.width, canvas.height);
+  } catch {}
+}
+
+function renderTemplatePreviews() {
+  for (const tpl of KADR_TEMPLATES) {
+    const canvas = document.querySelector(`[data-tpl-preview="${tpl.id}"]`);
+    if (!canvas) continue;
+    const words = tpl.sample.split(/\s+/).filter(Boolean);
+    const step = 0.85 / Math.max(1, words.length);
+    const cues = [
+      { id: "a", start: 0.15, end: 1, text: tpl.sample, template: tpl.caption,
+        words: words.map((text, i) => ({ text, start: 0.15 + step * i, end: 0.15 + step * (i + 1) })) },
+      { id: "b", start: 1.15, end: 2.2, text: "39% идей в голову", template: tpl.caption,
+        words: [{ text: "39%", start: 1.15, end: 1.45 }, { text: "идей", start: 1.45, end: 1.8 }, { text: "в голову.", start: 1.8, end: 2.2 }] },
+    ];
+    const edl = previewEdl(tpl, cues);
+    drawPreview(canvas, edl, Math.min(1.7, (edl.graphics[0]?.at || 0.5) + 0.12));
+  }
+}
+
+function renderExamplePreviews() {
+  for (const ex of KADR_EXAMPLES) {
+    const canvas = document.querySelector(`[data-ex-preview="${ex.id}"]`);
+    if (!canvas) continue;
+    const tpl = templateById(ex.template);
+    const edl = previewEdl(tpl, ex.cues);
+    drawPreview(canvas, edl, 1.35);
+  }
+}
+
 async function loadExample(id) {
   const ex = KADR_EXAMPLES.find(x => x.id === id);
   if (!ex || state.busy) return;
@@ -500,12 +564,23 @@ async function loadExample(id) {
 
 document.addEventListener("DOMContentLoaded", () => {
   window.__kadr3 = state; // debugging / tests: живой EDL доступен из консоли
+  const families = ["Все", ...new Set(KADR_TEMPLATES.map(t => t.family.split("·")[0].trim()))];
+  $("#filters").innerHTML = families.map((name, i) =>
+    `<button type="button" class="filter${i === 0 ? " active" : ""}" data-filter="${esc(name)}">${esc(name)}</button>`
+  ).join("");
   $("#templates").innerHTML = KADR_TEMPLATES.map(t =>
-    `<button type="button" class="card" data-template="${t.id}" style="--accent:${t.accent}"><i></i><strong>${t.name}</strong><small>${t.what}<br><em>${t.bestFor}</em></small></button>`
+    `<button type="button" class="card tpl-card" data-template="${t.id}" style="--accent:${t.accent}" data-family="${esc(t.family)}">
+      <canvas class="tpl-preview" data-tpl-preview="${t.id}" width="216" height="384"></canvas>
+      <strong>${t.name}</strong><small>${t.what}<br><em>${t.bestFor}</em></small>
+    </button>`
   ).join("");
   $("#examples").innerHTML = KADR_EXAMPLES.map(e =>
-    `<button type="button" class="card" data-example="${e.id}"><i style="--accent:#b9c6ff"></i><strong>${e.name}</strong><small>${e.note}</small></button>`
+    `<button type="button" class="card tpl-card" data-example="${e.id}">
+      <canvas class="tpl-preview" data-ex-preview="${e.id}" width="216" height="384"></canvas>
+      <strong>${e.name}</strong><small>${e.note}</small>
+    </button>`
   ).join("");
+  requestAnimationFrame(() => { renderTemplatePreviews(); renderExamplePreviews(); });
   $("#file").addEventListener("change", e => loadFile(e.target.files?.[0]).catch(err => { $("#status").textContent = err.message; }));
   $("#build").addEventListener("click", buildEdl);
   $("#export").addEventListener("click", exportMp4);
@@ -526,6 +601,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const id = e.target.dataset.cue; if (!id) return;
     if (e.target.checked) state.excluded.delete(id); else state.excluded.add(id);
     buildEdl();
+  });
+  $("#filters").addEventListener("click", e => {
+    const b = e.target.closest("[data-filter]"); if (!b) return;
+    const value = b.dataset.filter;
+    document.querySelectorAll("[data-filter]").forEach(x => x.classList.toggle("active", x === b));
+    document.querySelectorAll("[data-template]").forEach(card => {
+      card.style.display = value === "Все" || card.dataset.family.startsWith(value) ? "" : "none";
+    });
   });
   $("#templates").addEventListener("click", e => {
     const b = e.target.closest("[data-template]"); if (!b) return;

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { LOOKS, CAPTION_TEMPLATES, GRAPHIC_TYPES, MOTION_TYPES, normalizeEdl } from "./edl.js";
 import { KADR_TEMPLATES, KADR_EXAMPLES, templateById, planBeats } from "./templates.js";
 
-assert.equal(KADR_TEMPLATES.length, 18, "18 шаблонов из ghost-editor и соседних kits");
+assert.equal(KADR_TEMPLATES.length, 26, "26 шаблонов из ghost-editor, EasyReels, herk, animate и др.");
 for (const t of KADR_TEMPLATES) {
   assert.ok(LOOKS.includes(t.look), `${t.id}: look ${t.look} реален`);
   assert.ok(CAPTION_TEMPLATES.includes(t.caption), `${t.id}: caption ${t.caption} реален`);

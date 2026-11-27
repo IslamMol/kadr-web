@@ -15,6 +15,7 @@ const PALETTE = {
   ink:       { bg: "#141414", fg: "#f2f0eb", accent: "#ff3b30", muted: "#a8a49d" },
   halftone:  { bg: "#efe3cb", fg: "#1c1a15", accent: "#c2703a", muted: "#8d7f68" },
   board:     { bg: "#0f1715", fg: "#e7f4ee", accent: "#5ce1a6", muted: "#92a9a0" },
+  graph:     { bg: "#10231d", fg: "#e8f2ea", accent: "#8ee6b5", muted: "#8aa99a" },
 };
 const ease = (x) => { const t = Math.max(0, Math.min(1, x)); return t * t * (3 - 2 * t); };
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -252,6 +253,41 @@ function drawGraphic(ctx, g, edl, state, palette) {
       font(ctx, Math.round(W * 0.033), 600); ctx.fillStyle = i ? palette.fg : accent;
       ctx.fillText(s.slice(0, 52), pad + 52, y + 8, boxW - 80);
     });
+  } else if (g.type === "hook") {
+    rr(ctx, pad, H * 0.16, boxW, 150, 18, "rgba(10,12,16,.86)");
+    font(ctx, Math.round(W * 0.062), 900);
+    ctx.fillStyle = accent; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(g.label.slice(0, 28).toUpperCase(), W / 2, H * 0.16 + 75, boxW - 40);
+    ctx.fillStyle = palette.fg; ctx.fillRect(W / 2 - 70, H * 0.16 + 148, 140, 5);
+  } else if (g.type === "cta") {
+    rr(ctx, pad, H * 0.62, boxW, 360, 28, "rgba(8,10,14,.9)");
+    font(ctx, Math.round(W * 0.062), 900); ctx.fillStyle = palette.fg;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(g.label.slice(0, 36), W / 2, H * 0.70, boxW - 60);
+    (g.steps.length ? g.steps : ["ПОДПИШИСЬ"]).slice(0, 3).forEach((s, i) => {
+      rr(ctx, W / 2 - 220, H * 0.78 + i * 78, 440, 60, 30, i === 0 ? accent : "rgba(255,255,255,.16)");
+      font(ctx, 28, 800); ctx.fillStyle = i === 0 ? palette.bg : palette.fg;
+      ctx.fillText(s.slice(0, 28), W / 2, H * 0.78 + i * 78 + 30, 400);
+    });
+  } else if (g.type === "glass") {
+    rr(ctx, pad, H * 0.26, boxW, 430, 30, "rgba(255,255,255,.13)");
+    ctx.strokeStyle = "rgba(255,255,255,.35)"; ctx.lineWidth = 2;
+    if (typeof ctx.roundRect === "function") { ctx.beginPath(); ctx.roundRect(pad, H * 0.26, boxW, 430, 30); ctx.stroke(); }
+    font(ctx, Math.round(W * 0.05), 800); ctx.fillStyle = palette.fg;
+    ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillText(g.label.slice(0, 44), pad + 30, H * 0.30, boxW - 60);
+    (g.steps.length ? g.steps : [""]).slice(0, 4).forEach((s, i) => {
+      font(ctx, Math.round(W * 0.032), 600); ctx.fillStyle = i ? palette.muted : accent;
+      ctx.fillText(s.slice(0, 52), pad + 30, H * 0.39 + i * 62, boxW - 60);
+    });
+  } else if (g.type === "morph") {
+    const p = ease(clamp01(age / 0.5));
+    const w = boxW * (0.34 + 0.66 * p), h = 150 + 210 * p, r = 30 + 90 * (1 - p);
+    const x = (W - w) / 2, y = H * 0.36;
+    rr(ctx, x, y, w, h, r, accent);
+    font(ctx, Math.round(W * (0.05 + 0.04 * p)), 900);
+    ctx.fillStyle = palette.bg; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(g.label.slice(0, 26).toUpperCase(), W / 2, y + h / 2, w - 30);
   } else {
     font(ctx, Math.round(W * 0.072), 900);
     ctx.fillStyle = accent; ctx.textAlign = "center"; ctx.textBaseline = "middle";

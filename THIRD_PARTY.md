@@ -16,6 +16,17 @@
 | [Motion](https://github.com/motiondivision/motion) | `6390e6d2ddde40128258aaa0499587505f008f1e` | проверьте LICENSE в `vendor/motion` | Движок анимации, reference для timed values и easing. |
 | [Remotion](https://github.com/remotion-dev/remotion) | `1c5dc595aa1fe53b152dcf1289ce0d0338e5c0a3` | Remotion License (source-available) | Референс render-as-code. Код не копируем в браузерный бандл. |
 
+## Что адаптировано в `templates.js` и `frame.js`
+
+- ghost-editor: 7 preset-стилей и 11 recipes превратились в реальные системы EDL (субтитры + сцена + движение + look).
+- EasyReels: hook, chips, CTA и face-aware зоны — приёмы `easy-hook`, `easy-chips`, `easy-cta`, `board-face`.
+- Herk Edit Kit: graph paper и glass popout — `herk-graph`, `herk-glass`.
+- Product Launch Motion: один морфящийся элемент — `launch-morph`.
+- Animate: riso и cut paper — `animate-riso`, `animate-cut`.
+- HyperFrames: EDL → seekable HTML через `hyper-adapter.js`; `npx hyperframes lint` проходит без ошибок.
+
+Все превью шаблонов рисуются тем же `renderFrame`, что и экспорт, и не являются скопированными картинками из чужих gallery.
+
 ## Правила интеграции
 
 1. Не тащим целый large framework в браузерный бандл.
