@@ -5,3 +5,5 @@ desktop/kadr-desktop.zip
 site/desktop/kadr-desktop.zip
 site/source/kadr-source.zip
 *.kadr
+vendor/
+out/frame-*.png
