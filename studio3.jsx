@@ -6,12 +6,13 @@ import {
 } from "mediabunny";
 import { registerAacEncoder } from "@mediabunny/aac-encoder";
 import {
-  normalizeEdl, outputTimeForSource, sourceTimeAt, sourceSpanAt, frameState, mapCuesToOutput, LOOKS, CAPTION_TEMPLATES,
+  normalizeEdl, outputTimeForSource, sourceTimeAt, sourceSpanAt, frameState, mapCuesToOutput, LOOKS, CAPTION_TEMPLATES, GRAPHIC_TYPES,
 } from "./edl.js";
 import { renderFrame } from "./frame.js";
 import { planGhostEdit } from "./ghost.js";
 import { createASRWorker, wordsToCues } from "./asr.js";
 import { KADR_TEMPLATES, KADR_EXAMPLES, templateById, planBeats } from "./templates.js";
+import { createProject3, readProject3 } from "./project3.js";
 
 const $ = (s) => document.querySelector(s);
 const W = 1080, H = 1920;
@@ -19,6 +20,7 @@ const state = {
   file: null, url: null, video: null, duration: 0, edl: null,
   t: 0, playing: false, template: "clean", busy: false, conversion: null, result: null,
   cues: null, excluded: new Set(), asrBusy: false, asrWorker: null,
+  manualGraphics: [],
 };
 
 function coverDraw(ctx, video, x, y, w, h) {
@@ -70,7 +72,7 @@ function buildEdl() {
     }));
   }
 
-  const graphics = planBeats(cues, tpl.id);
+  const graphics = [...planBeats(cues, tpl.id), ...state.manualGraphics].slice(0, 12);
   const beatSpan = cues.length ? cues[cues.length - 1].end : span;
   const motion = [{
     id: "motion", type: tpl.motion === "scramble" ? "spring" : tpl.motion,
@@ -86,6 +88,7 @@ function buildEdl() {
   $("#range").value = "0";
   $("#status").textContent = `${tpl.name}: ${state.edl.duration.toFixed(1)} с, ${clips.length} склеек, ${cues.length} фраз, ${graphics.length} сцен.`;
   renderCues();
+  renderScenes();
   draw();
 }
 
@@ -95,6 +98,82 @@ function renderCues() {
   box.innerHTML = state.cues.map((c, i) =>
     `<label class="cue-row"><input type="checkbox" data-cue="${c.id}" ${state.excluded.has(c.id) ? "" : "checked"}><span>${String(c.text || "").slice(0, 90)}</span><time>${c.start.toFixed(1)}с</time></label>`
   ).join("");
+}
+
+const esc = (s) => String(s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function renderScenes() {
+  const box = $("#scenes");
+  if (!box) return;
+  if (!state.manualGraphics.length) { box.innerHTML = '<p class="hint">Сцен пока нет. Нажми «Добавить сцену».</p>'; return; }
+  box.innerHTML = state.manualGraphics.map(g =>
+    `<div class="scene-row" data-scene="${g.id}">
+      <input type="number" step="0.1" min="0" aria-label="Время сцены" data-field="at" value="${g.at.toFixed(2)}">
+      <input type="text" aria-label="Текст сцены" data-field="label" value="${esc(g.label)}">
+      <select aria-label="Тип сцены" data-field="type">${GRAPHIC_TYPES.map(t => `<option value="${t}" ${g.type === t ? "selected" : ""}>${t}</option>`).join("")}</select>
+      <button type="button" class="small" data-act="jump">→</button>
+      <button type="button" class="small" data-act="delete">×</button>
+    </div>`).join("");
+}
+
+function addScene() {
+  const tpl = templateById(state.template);
+  const at = Math.max(0, Number(state.t) || 0);
+  const textNow = (state.cues || []).find(c => at >= c.start && at <= c.end)?.text || tpl.sample;
+  state.manualGraphics.push({
+    id: `manual-${Date.now().toString(36)}`, type: GRAPHIC_TYPES.includes(tpl.graphic) ? tpl.graphic : "title",
+    at, duration: 2.2, label: String(textNow).slice(0, 70), value: "", steps: [], template: tpl.caption,
+  });
+  buildEdl();
+}
+
+function updateScene(id, field, value) {
+  const g = state.manualGraphics.find(x => x.id === id);
+  if (!g) return;
+  if (field === "at") g.at = Math.max(0, Number(value) || 0);
+  else g[field] = String(value).slice(0, 120);
+  buildEdl();
+}
+
+async function saveProject() {
+  if (!state.file || !state.edl || state.busy) return;
+  try {
+    const blob = createProject3({
+      edl: state.edl,
+      editor: {
+        template: state.template, cues: state.cues || [], excluded: [...state.excluded],
+        words: $("#words").value, manualGraphics: state.manualGraphics,
+        start: $("#in").value, end: $("#out").value,
+      },
+    }, state.file);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const base = String(state.file.name || "ролик").replace(/\.[^.]+$/, "");
+    a.href = url; a.download = `Кадр3 — ${base}.kadr3`; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+    $("#status").textContent = "Проект .kadr3 сохранён вместе с видео.";
+  } catch (e) { $("#status").textContent = e?.message || "Не удалось сохранить проект."; }
+}
+
+async function openProject(file) {
+  if (!file || state.busy) return;
+  try {
+    const project = await readProject3(file);
+    await loadFile(project.blob);
+    state.template = project.editor.template;
+    state.cues = project.editor.cues.length ? project.editor.cues : null;
+    state.excluded = new Set(project.editor.excluded);
+    state.manualGraphics = project.editor.manualGraphics;
+    $("#words").value = project.editor.words;
+    $("#in").value = String(project.editor.start);
+    $("#out").value = String(project.editor.end);
+    state.edl = project.edl;
+    $("#range").max = String(Math.max(0.1, state.edl.duration));
+    state.t = 0;
+    document.querySelectorAll("[data-template]").forEach(x => x.classList.toggle("active", x.dataset.template === state.template));
+    renderCues(); renderScenes(); draw();
+    $("#status").textContent = `Открыт проект: ${project.name}. ${state.edl.duration.toFixed(1)} с, ${state.edl.clips.length} склеек.`;
+  } catch (e) { $("#status").textContent = e?.message || "Не удалось открыть проект."; }
 }
 
 function parseSrt(raw) {
@@ -320,6 +399,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const b = e.target.closest("[data-example]"); if (!b) return;
     loadExample(b.dataset.example);
   });
+  $("#add-scene").addEventListener("click", addScene);
+  $("#scenes").addEventListener("change", e => {
+    const row = e.target.closest("[data-scene]"); if (!row || !e.target.dataset.field) return;
+    updateScene(row.dataset.scene, e.target.dataset.field, e.target.value);
+  });
+  $("#scenes").addEventListener("click", e => {
+    const row = e.target.closest("[data-scene]"); if (!row) return;
+    const act = e.target.dataset.act;
+    if (act === "delete") state.manualGraphics = state.manualGraphics.filter(g => g.id !== row.dataset.scene);
+    else if (act === "jump") {
+      const g = state.manualGraphics.find(x => x.id === row.dataset.scene);
+      if (g) { state.t = Math.min(state.edl.duration, g.at); $("#range").value = String(state.t); }
+    }
+    buildEdl();
+  });
+  $("#save-project").addEventListener("click", saveProject);
+  $("#open-project").addEventListener("click", () => $("#project-file").click());
+  $("#project-file").addEventListener("change", e => openProject(e.target.files?.[0]));
   $("#range").addEventListener("input", e => {
     state.t = Number(e.target.value);
     if (state.video && !state.playing && state.edl) state.video.currentTime = sourceTimeAt(state.edl, state.t);
@@ -352,5 +449,5 @@ document.addEventListener("DOMContentLoaded", () => {
     captions: [{ start: 0.4, end: 5.6, text: "Загрузи видео, напиши фразы и нажми приём", template: "clean" }],
     look: { preset: "clean", accent: "#ffd23f" },
   });
-  $("#range").max = "6"; draw();
+  $("#range").max = "6"; renderScenes(); draw();
 });

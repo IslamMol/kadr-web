@@ -39,3 +39,8 @@ input[type=range]{padding:0;accent-color:#b9c6ff}
 .cue-row time{color:#8f97a4;font-variant-numeric:tabular-nums}
 .card small em{display:block;margin-top:3px;color:#7f8794;font-style:normal;font-size:9px}
 .card.active i{box-shadow:0 0 12px var(--accent,#b9c6ff)}
+.scene-list{display:grid;gap:5px;max-height:170px;overflow:auto}
+.scene-row{display:grid;grid-template-columns:52px 1fr 68px auto auto;gap:5px;align-items:center;background:#101217;border:1px solid #2a2d35;border-radius:9px;padding:5px 7px}
+.scene-row input,.scene-row select{padding:5px 6px;font-size:11px}
+.scene-row input[type=number]{min-width:0}
+.scene-row button{padding:5px 7px;font-size:11px}
