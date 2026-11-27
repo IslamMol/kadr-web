@@ -232,3 +232,22 @@ button:disabled{opacity:.44}
 .conversion-dialog .conversion-note{margin-top:12px;font-size:12px;color:#aeb2c1}.conversion-progress{height:7px;background:#41434e;border-radius:10px;overflow:hidden;margin-top:16px}.conversion-progress span{display:block;height:100%;background:#bfcaff;border-radius:10px;transition:width .2s}
 @media(max-width:700px){.install-card{align-items:center;gap:10px}.install-copy{flex-basis:180px}.install-button{min-height:42px}.format-link{min-height:40px}}
 .repair-details{margin:10px 0 2px;padding:10px 12px;border:1px solid #ffffff14;border-radius:10px;background:#17181c;color:#bfc2cf;font-size:12px;line-height:1.5}.repair-details summary{cursor:pointer;color:#d7dbec;font-weight:700}.repair-details p{margin:8px 0;color:#b3b7c3}.repair-details .outline-action{font-size:12px}
+
+/* Kadr 2.0 simplification: quiet chrome, one accent, 4px spacing scale. */
+:root{--font:"Kadr Manrope",ui-sans-serif,system-ui,-apple-system,sans-serif}
+html,body{overflow-x:clip}
+body{background:var(--canvas);font-family:var(--font)}
+button,input,select,textarea{font-family:var(--font)}
+.page{padding-top:20px}
+.project-status{margin-bottom:12px}
+.stage-body{background:#1b1c20}
+.placeholder{background:#222328}
+.quick-draft,.voice-section,.director-section{background:transparent}
+.editor-tabs{margin-top:16px}
+.demo-link{min-height:44px;display:inline-flex;align-items:center}
+@media(max-width:700px){.page{padding-top:16px}.editor-tabs{margin-top:14px}}
+.preset-sample,.preset-sample.preset-premium,.preset-sample.preset-tech,.preset-sample.preset-red,.preset-sample.preset-light{background:#222327}
+.preset-sample:before,.preset-sample.preset-premium:before,.preset-sample.preset-tech:before{display:none}
+.quick-draft{background:transparent;border-color:#ffffff14}
+.stage-body{background:#1b1c20}
+.auto-pill{display:none}

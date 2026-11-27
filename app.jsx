@@ -33,9 +33,8 @@ import {
   LuDownload,
   LuVideo,
   LuSparkles,
-  LuFileVideo,
-  LuLockKeyhole,
-  LuImagePlus,
+ LuFileVideo,
+ LuImagePlus,
   LuCaptions,
   LuWandSparkles,
   LuX,
@@ -1415,7 +1414,7 @@ function App() {
         setAnalysisInfo({text:"В исходном видео нет доступного звука. Паузы оставлены без изменений; озвучка сохранена."});
       }
       if (!audio) {
-        setDraftInfo({error:true,text:"Черновик не создан. Проверь сообщение во вкладке «Видео» → «Автонарезка пауз»."});
+        setDraftInfo({error:true,text:"Черновик не создан. Проверь сообщение выше."});
         return;
       }
       const now = latestRef.current;
@@ -1488,7 +1487,7 @@ function App() {
       const ok = await createDraft(subtitles);
       if (token !== quickToken.current) return;
       setQuickInfo(ok ? {text:"Черновик готов. Открой «Текст» и «Дизайн», проверь слова, паузы и акценты."}
-        : {error:true,text:"Субтитры сохранены, но черновик не создан. Проверь сообщение в разделе «Автонарезка пауз»."});
+        : {error:true,text:"Субтитры сохранены, но черновик не создан. Проверь сообщение выше."});
     } catch {
       if (token === quickToken.current) setQuickInfo({error:true,text:"Не удалось создать черновик. Попробуй по шагам во вкладках «Видео» и «Текст»."});
     } finally {
@@ -1689,43 +1688,12 @@ function App() {
         </div>
       </header>
       <main className="page fade-in">
-        <div className="page-heading">
-          <div className="heading">
-            <div className="eyebrow">НЕБОЛЬШАЯ СТУДИЯ ДЛЯ REELS</div>
-            <h1>Истории в движении.</h1>
-            <p>Видео, титры и аккуратная графика — в одном месте.</p>
-          </div>
-          <div className="badge">Без подписки · на устройстве</div>
-        </div>
-        {!ready && <div className="quick-start" aria-label="Как создать ролик">
-          <strong>Всего 3 шага</strong>
-          <span><b>1</b> Загрузи видео</span><span><b>2</b> Проверь монтаж и оформление</span>
-          <span><b>3</b> Скачай ролик</span>
-        </div>}
         <div className="project-status" aria-live="polite">
           <span className={"project-state" + (projectDirty ? " unsaved" : "")}>
             {ready ? (projectDirty ? "Есть несохранённые изменения" : "Проект сохранён") : "Выбери видео или открой сохранённый проект"}
           </span>
-          {ready && <span>{autosaved ? "Автосохранено" : "Есть несохранённые изменения"}</span>}
           {projectInfo && <span className={projectInfo.error ? "project-error" : ""}>{projectInfo.text}</span>}
         </div>
-        {window.isSecureContext && location.protocol !== "file:" && !isInstalled &&
-          <div className="install-card">
-            <div className="install-copy">
-              <strong>Открывай «Кадр» как приложение</strong>
-              <span>Добавь значок на компьютер или телефон.</span>
-            </div>
-            <button type="button" className="install-button" onClick={installApp}>
-              <LuDownload size={15}/>{installPrompt ? "Установить" : "Как установить"}
-            </button>
-            <a className="install-button" href="./desktop/kadr-desktop.zip" download><LuDownload size={15}/>Скачать для Windows</a>
-            {installHelp && <div className="install-help">
-              <p><b>Компьютер:</b> в Chrome или Edge нажми значок установки справа от адреса сайта или открой меню браузера и выбери установку приложения.</p>
-              <p><b>Android:</b> открой меню Chrome → «Установить приложение» или «Добавить на главный экран».</p>
-              <p><b>iPhone:</b> в Safari нажми «Поделиться» → «На экран “Домой”» → «Добавить».</p>
-              <p>Названия пунктов могут отличаться. Доступность монтажа и экспорта зависит от браузера и устройства.</p>
-            </div>}
-          </div>}
         <div className="workspace">
           <div className="maincol">
             <section ref={stageRef} className="stage" aria-label="Предпросмотр видео">
@@ -1738,10 +1706,6 @@ function App() {
                 </span>
               </div>
               <div className="stage-body">
-                <div className="stage-note">
-                  <strong>Маленькие детали — большое впечатление.</strong>
-                  Выбранные паузы пропускаются в предпросмотре и экспорте.
-                </div>
                 <div className="phone">
                   <canvas ref={backgroundRef} className="composition-bg" width={W} height={H} hidden={!ready} aria-hidden="true" />
                   <div className="video-window" style={{left:`${rect.x/W*100}%`,top:`${rect.y/H*100}%`,
@@ -1768,9 +1732,7 @@ function App() {
                         <LuClapperboard size={25} />
                       </div>
                       <strong>Твоё видео будет здесь</strong>
-                      <span>Начни со своего ролика или открой готовый пример</span>
-                      <button type="button" className="placeholder-action" disabled={projectBusy || busy}
-                        onClick={() => videoInput.current?.click()}>Выбрать видео</button>
+                      <span>Выбери видео в шаге 1, чтобы начать</span>
                     </div>
                   )}
                 </div>
@@ -1802,48 +1764,19 @@ function App() {
                   {time(position)} / {time(duration)}
                 </span>
               </div>
-              <div className="guide-bar">
-                <button type="button" className="guide-toggle" aria-pressed={safeGuide} disabled={!ready}
-                  onClick={() => setSafeGuide(v => !v)}>Безопасные поля <span aria-hidden="true">{safeGuide ? "Вкл." : "Выкл."}</span></button>
-                {safeGuide && <p>Примерный ориентир для интерфейса платформ. В MP4 не попадёт.</p>}
-              </div>
             </section>
-            <div className="bottom-note">
-              <LuLockKeyhole size={14} />
-              <span>
-                Монтаж, субтитры и озвучка выполняются на устройстве. Модели и библиотеки скачиваются из интернета.
-              </span>
-            </div>
           </div>
           <aside className="side">
-            <div className="side-head">
-              <h2>Студия монтажа</h2>
-              <span>Reels · Shorts</span>
-            </div>
             <nav ref={tabsRef} className="editor-tabs" aria-label="Разделы редактора">
               {[["load","1 Загрузить"],["check","2 Проверить"],["export","3 Экспорт"]].map(([key,label]) =>
                 <button key={key} type="button" aria-pressed={activeTab === key} onClick={() => setActiveTab(key)}>{label}</button>)}
             </nav>
-            <div className="tab-help">{{load:"Выбери видео, при необходимости обрежь его, добавь озвучку или музыку.",
-              check:"Проверь субтитры, дубли, оформление, заголовок и графику.",
-              export:"Проверь предупреждения и лист проверки, собери ролик и скачай MP4."}[activeTab]}</div>
-            <details className="help-panel">
-              <summary>Как пользоваться редактором</summary>
-              <ol>
-                <li>Во вкладке <b>«Видео»</b> выбери ролик. При желании обрежь его и добавь музыку или озвучку.</li>
-                <li>Во вкладке <b>«Текст»</b> создай субтитры и исправь ошибки. Можно пропустить этот шаг.</li>
-                <li>В <b>«Дизайне»</b> выбери оформление, введи заголовок и добавь графику.</li>
-                <li>Посмотри результат, нажми <b>«Собрать ролик»</b>, затем <b>«Скачать MP4»</b>.</li>
-              </ol>
-              <p>Чтобы вернуться позже, нажми «Сохранить проект». Файл .kadr содержит исходное видео, озвучку, музыку и картинки — не отправляй его посторонним.</p>
-              <p>Для загрузки моделей субтитров и голоса нужен интернет. Текст, звук и видео обрабатываются на устройстве.</p>
-            </details>
             <div className="section" hidden={activeTab !== "load"}>
               <div className="sec-title">
                 <div className="sec-name">
                   <LuUpload size={15} /> Видео
                 </div>
-                <span className="sec-number">01</span>
+                
               </div>
               <input
                 ref={videoInput}
@@ -1853,8 +1786,6 @@ function App() {
                 hidden
                 onChange={(e) => chooseVideoFile(e.target.files?.[0])}
               />
-              <input ref={anyVideoInput} type="file" aria-label="Выбрать файл любого формата" hidden
-                onChange={e => chooseVideoFile(e.target.files?.[0])} />
               <div
                 className="source-box"
                 role="button"
@@ -1886,9 +1817,7 @@ function App() {
                 </div>
                 <LuUpload size={15} color="#7c879a" />
               </div>
-              <p className="hint">MP4, MOV, WebM и другие форматы. Если браузер не откроет файл, предложим его преобразовать.</p>
-              <button type="button" className="demo-link format-link" disabled={busy || projectBusy || videoImportBusy}
-                onClick={() => anyVideoInput.current?.click()}>Выбрать файл любого формата</button>
+              <p className="hint">MP4, MOV, WebM и другие. Неподдерживаемый формат предложим преобразовать.</p>
               <div ref={videoHelpRef}>
               {videoInfo && <div className={"video-info" + (videoInfo.error ? " error" : "")} role="status">{videoInfo.text}</div>}
               {videoCandidate && <div className="converter-card">
@@ -1907,15 +1836,6 @@ function App() {
               <button className="demo-link" onClick={() => requestReplace(loadDemo)} disabled={busy || projectBusy}>
                 Посмотреть встроенный пример
               </button>
-              {ready && source && <details className="repair-details">
-                <summary>Видео открылось, но есть проблема со звуком?</summary>
-                <p>Можно подготовить совместимую копию. Текущий монтаж не изменится до твоего подтверждения.</p>
-                <button type="button" className="outline-action" disabled={videoImportBusy}
-                  onClick={() => {
-                    setVideoCandidate({blob:source.blob,name:source.name,ready:false});
-                    setVideoInfo({text:"Можно попробовать преобразовать открытый файл на устройстве."});
-                  }}>Подготовить совместимую копию</button>
-              </details>}
               {ready && <div className="quick-draft">
                 <strong>Быстрый черновик</strong>
                 <p>{srt?.cues?.length
@@ -1941,7 +1861,7 @@ function App() {
                 <div className="sec-name">
                   <LuScissors size={15} /> Обрезка
                 </div>
-                <span className="sec-number">02</span>
+                
               </div>
               <div className="times">
                 <label>
@@ -1992,146 +1912,10 @@ function App() {
                 {cuts.length > 0 && <> · После: <strong>{outputDuration.toFixed(1)} сек</strong></>}
               </p>
             </div>
-            <div className="section auto-section" hidden={activeTab !== "load"}>
-              <div className="sec-title">
-                <div className="sec-name"><LuScissors size={15} /> Автонарезка пауз</div>
-                <span className="auto-pill">БЕЗ ИИ</span>
-              </div>
-              <p className="hint auto-intro">Найдём тихие участки от 0,8 секунды и оставим немного воздуха по краям склеек. Исходник — до 3 минут и 200 МБ.</p>
-              <button className="outline-action" onClick={analyzePauses} disabled={!ready || busy || analysisBusy || asrBusy || draftBusy}>
-                <LuScissors size={15} /> {analysisBusy ? "Анализируем звук…" : silences.length ? "Найти паузы заново" : "Найти паузы"}
-              </button>
-              {analysisInfo && <p className={"auto-info" + (analysisInfo.error ? " error" : "")} role="status">{analysisInfo.text}</p>}
-              {silences.length > 0 && visibleSilences.length !== silences.length && <p className="auto-info">В выбранном фрагменте: {visibleSilences.length} из {silences.length} найденных пауз.</p>}
-              {visibleSilences.length > 6 && <p className="auto-info">Прокрути список, чтобы увидеть остальные паузы.</p>}
-              {visibleSilences.length > 0 && <div className="cuts-list" aria-label="Найденные паузы">
-                {visibleSilences.map(c => <div className="cut-row" key={c.id}>
-                  <label><input type="checkbox" checked={c.enabled} disabled={busy} onChange={e => {
-                    setSilences(prev => prev.map(item => item.id === c.id ? {...item, enabled: e.target.checked} : item)); invalidate();
-                  }}/><span>Вырезать{c.guarded && <small className="cut-guard">Рядом субтитры</small>}</span></label>
-                  <button className="cut-jump" disabled={busy} onClick={() => jumpTo(c.from - .5)}
-                    aria-label={`К паузе ${preciseTime(c.from)} – ${preciseTime(c.to)}`}>{preciseTime(c.from)} – {preciseTime(c.to)}</button>
-                </div>)}
-              </div>}
-              <p className="hint auto-warning">Это поиск тишины, не понимание речи: тихие слова могут попасть под склейку, а музыка — скрыть паузы. Черновик по умолчанию оставляет паузы рядом с субтитрами, но их тайминги тоже бывают неточными. Проверь результат. Ползунок показывает время исходника.</p>
-            </div>
-            <div className="section voice-section" hidden={activeTab !== "load"}>
-              <div className="sec-title">
-                <div className="sec-name"><LuVolume2 size={15} /> Закадровая озвучка</div>
-                <span className="auto-pill">ПО ЖЕЛАНИЮ</span>
-              </div>
-              <p className="hint auto-intro">Для историй, фактов и видео без голоса. Исходный звук можно оставить фоном.</p>
-              <details className="voice-details">
-                <summary>{voice ? "Настроить озвучку · добавлена" : "Добавить озвучку"}</summary>
-                <div className="voice-body">
-                  <div className="mode voice-choice" role="group" aria-label="Способ добавления озвучки">
-                    <button type="button" aria-pressed={voiceTab === "generate"} disabled={voiceBusy}
-                      onClick={() => setVoiceTab("generate")}>Создать из текста</button>
-                    <button type="button" aria-pressed={voiceTab === "file"} disabled={voiceBusy}
-                      onClick={() => setVoiceTab("file")}>Загрузить файл</button>
-                  </div>
-                  {voiceTab === "generate" ? <>
-                    <p className="hint">Без ключа: голос создаётся на устройстве. Для модели и библиотек (около 400 МБ) нужны интернет и достаточно памяти.</p>
-                    <label className="voice-field">Текст озвучки · до 600 символов
-                      <textarea className="text-input" aria-label="Текст озвучки" rows="4" maxLength={600}
-                        value={voiceText} disabled={busy || voiceBusy} placeholder="Например: А ты знал, что…" onChange={e => setVoiceText(e.target.value)} />
-                    </label>
-                    <label className="voice-field">Голос на русском
-                      <select className="form-select" aria-label="Голос озвучки" value={voicePreset}
-                        disabled={busy || voiceBusy} onChange={e => setVoicePreset(e.target.value)}>
-                        {LOCAL_VOICES.map(item => <option value={item.id} key={item.id}>{item.label}</option>)}
-                      </select>
-                    </label>
-                    <button type="button" className="outline-action"
-                      disabled={busy || asrBusy || !ready || (!voiceBusy && !voiceText.trim())}
-                      onClick={voiceBusy ? () => voiceAbortRef.current?.abort() : generateVoice}>
-                      <LuSparkles size={15} /> {voiceBusy ? "Отменить создание" : "Создать озвучку"}
-                    </button>
-                    <p className="hint">Supertonic 3 · синтетический голос. Прослушай результат. Автор модели — Supertone.</p>
-                    <div className="voice-links"><a href="https://huggingface.co/supertone-oss-archive/supertonic-3/blob/main/LICENSE" target="_blank" rel="noreferrer">Условия модели OpenRAIL-M</a></div>
-                    <p className="hint">Лицензия содержит ограничения: ознакомься с условиями перед публикацией.</p>
-                  </> : <>
-                    <p className="hint">Загрузи WAV, MP3 или M4A — например, файл, созданный в другом сервисе. До 3 минут и 40 МБ.</p>
-                    <p className="hint">Условия бесплатных голосов и права на коммерческое использование зависят от сервиса.</p>
-                    <button type="button" className="outline-action" disabled={!ready || busy || voiceBusy || asrBusy}
-                      onClick={() => voiceInput.current?.click()}><LuUpload size={15}/> Выбрать аудиофайл</button>
-                  </>}
-                  <input ref={voiceInput} type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg"
-                    aria-label="Загрузить аудиофайл озвучки" hidden onChange={e => importVoice(e.target.files?.[0])} />
-                  {voiceInfo && <p className={"auto-info" + (voiceInfo.error ? " error" : "")} role="status">{voiceInfo.text}</p>}
-                  {voice && <div className="voice-loaded">
-                    <div className="voice-loaded-head">
-                      <div><strong>{voice.name}</strong><span>{voice.duration.toFixed(1)} сек</span></div>
-                      <button type="button" className="text-action danger" disabled={busy || voiceBusy || asrBusy} onClick={removeVoice}>Убрать</button>
-                    </div>
-                    <audio ref={voiceAudioRef} src={voice.url} controls preload="auto" aria-label="Прослушать озвучку" />
-                    <label className="voice-field">Начало озвучки после монтажа, сек
-                      <input type="number" className="form-input" aria-label="Начало озвучки, секунды" min="0"
-                        max={Math.max(0,outputDuration-.05)} step="0.1" value={voiceOffset} disabled={busy || asrBusy}
-                        onChange={e => {setVoiceOffset(clamp(Number(e.target.value)||0,0,Math.max(0,outputDuration-.05))); invalidate();}} />
-                    </label>
-                    <label className="voice-level"><span>Громкость озвучки <b>{voiceVolume}%</b></span>
-                      <input type="range" aria-label="Громкость озвучки" min="0" max="100" step="1" value={voiceVolume}
-                        disabled={busy || asrBusy} onChange={e => {setVoiceVolume(Number(e.target.value)); invalidate();}} /></label>
-                    <label className="voice-level"><span>Громкость исходного звука <b>{originalVolume}%</b></span>
-                      <input type="range" aria-label="Громкость исходного звука" min="0" max="100" step="1" value={originalVolume}
-                        disabled={busy || asrBusy} onChange={e => {setOriginalVolume(Number(e.target.value)); invalidate();}} /></label>
-                    {voiceOffset + voice.duration > outputDuration + .05 &&
-                      <p className="auto-info error">Озвучка длиннее ролика: часть за его концом не попадёт в MP4.</p>}
-                    <p className="hint">Время отсчитывается от начала ролика после обрезки и удаления пауз. Сначала послушай общий звук: слишком громкие дорожки могут искажаться.</p>
-                  </div>}
-                  <p className="hint">Условия бесплатных голосов и права на коммерческое использование зависят от сервиса. Экспорт с озвучкой ограничен исходником до 3 минут и 200 МБ.</p>
-                </div>
-              </details>
-            </div>
-            <div className="section music-section" hidden={activeTab !== "load"}>
-              <div className="sec-title">
-                <div className="sec-name"><LuMusic2 size={15} /> Фоновая музыка</div>
-                <span className="auto-pill">ПО ЖЕЛАНИЮ</span>
-              </div>
-              <details className="voice-details">
-                <summary>{music ? "Настроить музыку · добавлена" : "Добавить свою музыку"}</summary>
-                <div className="voice-body">
-                  <p className="hint">Выбери MP3, WAV или M4A до 3 минут и 40 МБ. Музыка начнётся с начала готового ролика.</p>
-                  <button type="button" className="outline-action" disabled={!ready || busy || musicBusy || asrBusy || voiceBusy}
-                    onClick={() => musicInput.current?.click()}><LuUpload size={15}/> {music ? "Заменить музыку" : "Выбрать музыку"}</button>
-                  <input ref={musicInput} type="file" accept="audio/*,.wav,.mp3,.m4a,.aac,.ogg"
-                    aria-label="Загрузить музыку" hidden onChange={e => importMusic(e.target.files?.[0])} />
-                  {musicInfo && <p className={"auto-info" + (musicInfo.error ? " error" : "")} role="status">{musicInfo.text}</p>}
-                  {music && <div className="voice-loaded">
-                    <div className="voice-loaded-head">
-                      <div><strong>{music.name}</strong><span>{music.duration.toFixed(1)} сек</span></div>
-                      <button type="button" className="text-action danger" disabled={busy || musicBusy} onClick={removeMusic}>Убрать музыку</button>
-                    </div>
-                    <audio ref={musicAudioRef} src={music.url} controls preload="auto" aria-label="Прослушать музыку" />
-                    <label className="voice-level"><span>Громкость музыки <b>{musicVolume}%</b></span>
-                      <input type="range" aria-label="Громкость музыки" min="0" max="100" step="1" value={musicVolume}
-                        disabled={busy} onChange={e => {setMusicVolume(Number(e.target.value)); invalidate();}} /></label>
-                    <label className="voice-level"><span>Громкость исходного видео <b>{originalVolume}%</b></span>
-                      <input type="range" aria-label="Громкость видео с музыкой" min="0" max="100" step="1" value={originalVolume}
-                        disabled={busy} onChange={e => {setOriginalVolume(Number(e.target.value)); invalidate();}} /></label>
-                    <details className="beat-settings">
-                      <summary>Привязка графики к ритму</summary>
-                      <p className="hint">Необязательно. Укажи темп трека и время первого удара, затем во вкладке «Дизайн» привяжи нужный элемент.</p>
-                      <label className="voice-field">Темп трека, BPM
-                        <input type="number" className="form-input" aria-label="Темп музыки, BPM" min="40" max="240" step="1"
-                          placeholder="Например, 120" value={musicBpm} disabled={busy}
-                          onChange={e => {setMusicBpm(e.target.value);setBeatInfo(null);}} /></label>
-                      <label className="voice-field">Первый удар от начала музыки, сек
-                        <input type="number" className="form-input" aria-label="Первый удар, секунды" min="0" max="60" step="0.01"
-                          value={firstBeat} disabled={busy} onChange={e => {setFirstBeat(clamp(Number(e.target.value)||0,0,60));setBeatInfo(null);}} /></label>
-                      <p className="hint">Ритм не определяется автоматически. Если BPM или первый удар указаны неверно, совпадение будет неточным.</p>
-                    </details>
-                    <p className="hint">Музыка не повторяется. Если она длиннее видео, лишнее обрежется. Прослушай общий звук: слишком громкие дорожки могут искажаться.</p>
-                  </div>}
-                  <p className="hint">Используй музыку, на которую у тебя есть права. Экспорт с дополнительным звуком: исходник до 3 минут и 200 МБ.</p>
-                </div>
-              </details>
-            </div>
             <div className="section captions-section" hidden={activeTab !== "check"}>
               <div className="sec-title">
                 <div className="sec-name"><LuCaptions size={15} /> Субтитры</div>
-                <span className="auto-pill">ЛОКАЛЬНЫЙ ИИ</span>
+                
               </div>
               <p className="hint auto-intro">Распознай речь, затем поправь каждую фразу и её время. До 3 минут и 200 МБ.</p>
               {voice && <label className="field-label">Что распознать
@@ -2206,29 +1990,16 @@ function App() {
               {captionHitsFace && <p className="auto-info">Субтитры пересекаются с зоной лица — в предпросмотре и экспорте они автоматически сдвинуты в безопасную зону ({effectiveCaptionPosition === "low" ? "ниже" : "выше"}).</p>}
             </div>
             <div className="section takes-section" hidden={activeTab !== "check"}>
-              <div className="sec-title"><div className="sec-name"><LuScissors size={15} /> Предложения и дубли</div><span className="auto-pill">ПО СЛОВАМ</span></div>
+              <div className="sec-title"><div className="sec-name"><LuScissors size={15} /> Предложения и дубли</div></div>
               {!takesPlan?.sentences?.length ? <p className="hint">Создай черновик или быстрый черновик при субтитрах с таймингом слов — здесь появятся предложения и выбранные дубли.</p> :
               <div className="cuts-list" aria-label="Предложения и дубли">
                 {takesPlan.sentences.map((s, i) => { const key = String(s.text || "").trim().toLowerCase(); const alt = takesPlan.rejected?.find(r => String(r.text || "").trim().toLowerCase() === key); const isCut = silences.some(c => c.enabled && c.from < s.end && c.to > s.start); return <div className="cut-row take-row" key={i}><span className="take-text">{s.text} <small>дубль {preciseTime(s.start)}</small></span><button type="button" className="text-action" disabled={busy} onClick={() => toggleSentence(s)}>{isCut ? "Вернуть предложение" : "Вырезать предложение"}</button>{alt && <button type="button" className="text-action" disabled={busy} onClick={() => swapTake(s)}>Заменить дубль ({preciseTime(alt.start)})</button>}</div>; })}
               </div>}
             </div>
-            <div className="section director-section" hidden={activeTab !== "check"}>
-              <div className="sec-title">
-                <div className="sec-name"><LuWandSparkles size={15} /> Автоматический черновик</div>
-                <span className="auto-pill">БЕЗ ИИ</span>
-              </div>
-              <p className="hint auto-intro">Найдём тихие паузы и предложим графические акценты по субтитрам. Без субтитров найдём только паузы.</p>
-              <button type="button" className="outline-action draft-action" onClick={() => createDraft()}
-                disabled={!ready || busy || analysisBusy || asrBusy || draftBusy}>
-                <LuWandSparkles size={15} /> {draftBusy ? "Создаём черновик…" : "Создать черновик"}
-              </button>
-              {draftInfo && <p className={"auto-info" + (draftInfo.error ? " error" : "")} role="status">{draftInfo.text}</p>}
-              <p className="hint auto-warning">Повторный запуск обновит паузы и автоматические элементы; добавленные или изменённые вручную останутся. Фразы выбираются по правилам, не по смыслу — их и склейки нужно проверить.</p>
-            </div>
             <div className="section preset-section" hidden={activeTab !== "check"}>
               <div className="sec-title">
                 <div className="sec-name"><LuSparkles size={15} /> Оформление</div>
-                <span className="auto-pill">БЕЗ ИИ</span>
+                
               </div>
               <span className="field-label">Выбери стиль</span>
               <div className="preset-grid" role="group" aria-label="Стиль оформления">
@@ -2247,173 +2018,10 @@ function App() {
               </label>
               <p className="hint">В начале ролика заголовок собирается в отдельную сцену. В тёмном премиуме слова мягко появляются по очереди, если включено движение. Затем кадр плавно меняется.</p>
             </div>
-            <div className="section" hidden={activeTab !== "check"}>
-              <div className="sec-title">
-                <div className="sec-name">
-                  <LuWandSparkles size={15} /> Движение и кадр
-                </div>
-                <span className="sec-number">03</span>
-              </div>
-              <div className="mode mode-three" aria-label="Стиль движения">
-                <button
-                  disabled={busy}
-                  aria-pressed={style === "none"}
-                  onClick={() => {
-                    setStyle("none");
-                    invalidate();
-                  }}
-                >
-                  Без
-                </button>
-                <button
-                  disabled={busy}
-                  aria-pressed={style === "soft"}
-                  onClick={() => {
-                    setStyle("soft");
-                    invalidate();
-                  }}
-                >
-                  Легко
-                </button>
-                <button
-                  disabled={busy}
-                  aria-pressed={style === "dynamic"}
-                  onClick={() => {
-                    setStyle("dynamic");
-                    invalidate();
-                  }}
-                >
-                  Динамично
-                </button>
-              </div>
-              <p className="hint">
-                Зум и цвет применяются к видео автоматически. В режиме «Динамично» графика появляется с мягкой пружиной.
-              </p>
-              <span className="field-label spaced">
-                Формат вертикального кадра
-              </span>
-              <div className="mode" aria-label="Режим кадрирования">
-                <button
-                  disabled={busy}
-                  aria-pressed={mode === "crop"}
-                  onClick={() => {
-                    setMode("crop");
-                    invalidate();
-                  }}
-                >
-                  Заполнить
-                </button>
-                <button
-                  disabled={busy}
-                  aria-pressed={mode === "fit"}
-                  onClick={() => {
-                    setMode("fit");
-                    invalidate();
-                  }}
-                >
-                  Вписать
-                </button>
-              </div>
-              <p className="hint">
-                «Заполнить» обрезает края; «Вписать» показывает всё видео.
-              </p>
-              <div className="frame-controls">
-                <label><span>Приближение <strong>{frameZoom.toFixed(2)}×</strong></span>
-                  <input type="range" aria-label="Приближение кадра" min="1" max="2" step="0.05" value={frameZoom}
-                    disabled={!ready || busy || mode === "fit"} onChange={e => {setFrameZoom(Number(e.target.value)); invalidate();}} /></label>
-                <label><span>Кадр левее / правее</span>
-                  <input type="range" aria-label="Кадр левее или правее" min="0" max="100" step="1" value={frameX}
-                    disabled={!ready || busy || mode === "fit"} onChange={e => {setFrameX(Number(e.target.value)); invalidate();}} /></label>
-                <label><span>Кадр выше / ниже</span>
-                  <input type="range" aria-label="Кадр выше или ниже" min="0" max="100" step="1" value={frameY}
-                    disabled={!ready || busy || mode === "fit"} onChange={e => {setFrameY(Number(e.target.value)); invalidate();}} /></label>
-                <button className="text-action" disabled={!ready || busy} onClick={() => {setFrameZoom(1); setFrameX(50); setFrameY(50); invalidate();}}>Вернуть кадр по центру</button>
-              </div>
-              <p className="hint">Ползунки работают в режиме «Заполнить». Сцены меняют пропорции окна — проверь лицо в начале и во время акцентов.</p>
-            </div>
-            <div className="section graphics-section" hidden={activeTab !== "check"}>
-              <div className="sec-title"><div className="sec-name"><LuImagePlus size={15} /> Библиотека графики</div><span className="sec-number">05</span></div>
-              <p className="hint auto-intro">Добавь элемент, настрой текст и выбери, когда его показать. Кадр перестроится под графику.</p>
-              <button type="button" className="outline-action suggest-action" disabled={busy || asrBusy || !srt?.cues?.length || graphics.length >= 12} onClick={suggestAccentPhrases}><LuWandSparkles size={16}/> Добавить фразы из субтитров</button>
-              <p className="hint">Берём до четырёх коротких фрагментов буквально, не по смыслу. Их можно изменить или удалить.</p>
-              <div className="graphic-types" role="group" aria-label="Добавить графику">
-                <button type="button" disabled={busy || graphics.length >= 12} onClick={() => addGraphic("quote")}><LuFileText size={16}/> Фраза</button>
-                <button type="button" disabled={busy || graphics.length >= 12} onClick={() => addGraphic("icon")}><LuSparkles size={16}/> Иконка</button>
-                <button type="button" disabled={busy || graphics.length >= 12} onClick={() => addGraphic("diagram")}><LuWorkflow size={16}/> Схема</button>
-                <button type="button" disabled={busy || graphics.length >= 12} onClick={() => addGraphic("number")}><LuHash size={16}/> Цифра</button>
-                <button type="button" disabled={busy || images.length >= 4 || graphics.length >= 12} onClick={() => imageInput.current?.click()}><LuImagePlus size={16}/> Картинка</button>
-              </div>
-              <input ref={imageInput} type="file" accept="image/*" multiple aria-label="Добавить картинки" hidden onChange={e => addPictures(e.target.files)} />
-              {images.length > 0 && <div className="image-list">{images.map(item => <div className="image-row" key={item.id}>
-                <img src={item.url} alt="" /><span title={item.name}>{item.name}</span>
-                <button className="text-action image-again" aria-label={`Добавить ${item.name} ещё раз`} disabled={busy || graphics.length >= 12} onClick={() => addGraphic("image", item.id)}>Ещё</button>
-                <button aria-label={`Убрать ${item.name}`} className="small-delete" disabled={busy} onClick={() => removePicture(item.id)}><LuX size={15}/></button>
-              </div>)}</div>}
-              {graphics.length > 0 && <div className="graphics-list" aria-label="Элементы на видео">
-                {graphics.map((g,i) => {
-                  const times=graphicTimes(g,srt), first=times[0];
-                  return <details className="graphic-item" key={g.id} open={!g.auto}>
-                    <summary><span className="graphic-count">{String(i+1).padStart(2,"0")}</span><strong>{g.auto ? "Авто · " : ""}{({quote:"Фраза",icon:"Иконка",diagram:"Схема",number:"Цифра",image:"Картинка"})[g.kind]}
-                      {(g.label || g.value) && <small className="graphic-summary-label">{g.label || g.value}</small>}
-                    </strong><span>{g.trigger === "keyword" ? "По слову" : `${Number(g.at||0).toFixed(1)} с`}</span></summary>
-                    <div className="graphic-fields">
-                      {g.kind === "icon" && <label>Иконка
-                        <select className="form-select" aria-label={`Иконка элемента ${i+1}`} value={g.icon} disabled={busy} onChange={e => updateGraphic(g.id,{icon:e.target.value})}>
-                          <option value="spark">Акцент</option><option value="chart">Рост</option><option value="check">Готово</option><option value="idea">Идея</option>
-                        </select></label>}
-                      {g.kind === "image" && <label>Изображение
-                        <select className="form-select" aria-label={`Изображение элемента ${i+1}`} value={g.assetId} disabled={busy} onChange={e => updateGraphic(g.id,{assetId:e.target.value})}>
-                          {images.map(item => <option value={item.id} key={item.id}>{item.name}</option>)}
-                        </select></label>}
-                      {g.kind === "number" && <label>Цифра или короткое значение
-                        <input className="form-input" aria-label={`Значение элемента ${i+1}`} maxLength={18} value={g.value} disabled={busy} placeholder="Например, 25%" onChange={e => updateGraphic(g.id,{value:e.target.value})}/></label>}
-                      {g.kind === "diagram" && <label>Этапы через слэш
-                        <input className="form-input" aria-label={`Этапы элемента ${i+1}`} maxLength={60} value={g.value} disabled={busy} placeholder="Идея / план / результат" onChange={e => updateGraphic(g.id,{value:e.target.value})}/></label>}
-                      <label>Подпись {g.kind === "image" ? "(необязательно)" : g.kind === "quote" ? "фразы" : "элемента"}
-                        <input className="form-input" aria-label={`Подпись элемента ${i+1}`} maxLength={60} value={g.label} disabled={busy} placeholder="Твой короткий текст" onChange={e => updateGraphic(g.id,{label:e.target.value})}/></label>
-                      {g.kind === "quote" && preset === "premium" && g.layout !== "scene" && <label>Композиция
-                        <select className="form-select" aria-label={`Композиция фразы ${i+1}`} value={g.variant || "orbit"} disabled={busy} onChange={e => updateGraphic(g.id,{variant:e.target.value})}>
-                          <option value="overlay">Текст на видео</option><option value="orbit">Портрет в круге</option><option value="framed">Окно и текст</option>
-                        </select></label>}
-                      <span className="field-label">Как показать</span>
-                      <div className="mode graphic-trigger" role="group" aria-label={`Вид элемента ${i+1}`}>
-                        <button type="button" disabled={busy} aria-pressed={g.layout !== "scene"} onClick={() => updateGraphic(g.id,{layout:"card"})}>С видео</button>
-                        <button type="button" disabled={busy} aria-pressed={g.layout === "scene"} onClick={() => updateGraphic(g.id,{layout:"scene"})}>На весь экран</button>
-                      </div>
-                      {g.layout === "scene" && <span className="field-help">Видео на это время закрывается сценой; голос и субтитры остаются.</span>}
-                      <span className="field-label">Показать</span>
-                      <div className="mode graphic-trigger" role="group" aria-label={`Условие элемента ${i+1}`}>
-                        <button type="button" disabled={busy} aria-pressed={g.trigger === "time"} onClick={() => updateGraphic(g.id,{trigger:"time"})}>По времени</button>
-                        <button type="button" disabled={busy} aria-pressed={g.trigger === "keyword"} onClick={() => updateGraphic(g.id,{trigger:"keyword"})}>По слову</button>
-                      </div>
-                      {g.trigger === "time" ? <label>Секунда исходника
-                        <input className="form-input" type="number" aria-label={`Время элемента ${i+1}`} min="0" step="0.1" value={g.at} disabled={busy} onChange={e => updateGraphic(g.id,{at:e.target.value})}
-                          onBlur={e => updateGraphic(g.id,{at:clamp(Number(e.target.value)||0,0,duration||999)})}/></label> :
-                        <label>Слово или фраза в субтитрах
-                          <input className="form-input" aria-label={`Ключевое слово элемента ${i+1}`} maxLength={40} value={g.keyword} disabled={busy} placeholder="Например, идея" onChange={e => updateGraphic(g.id,{keyword:e.target.value})}/>
-                          <span className="field-help">{!srt ? "Сначала создай или загрузи субтитры с таймингом." : g.keyword.trim() ? `Совпадений: ${times.length}` : "Найдем все совпадения в субтитрах."}</span></label>}
-                      {g.trigger === "time" && music && <div className="beat-action">
-                        <button type="button" className="text-action" disabled={busy} onClick={() => snapGraphicToBeat(g)}>Поставить на ближайший удар</button>
-                        {!musicBpm && <span className="field-help">Сначала укажи BPM в настройках музыки.</span>}
-                        {beatInfo?.id === g.id && <span className={"field-help" + (beatInfo.error ? " beat-error" : "")}>{beatInfo.text}</span>}
-                      </div>}
-                      <label>Длительность, сек
-                        <input className="form-input" type="number" aria-label={`Длительность элемента ${i+1}`} min="0.4" max="12" step="0.1" value={g.duration} disabled={busy} onChange={e => updateGraphic(g.id,{duration:e.target.value})}
-                          onBlur={e => updateGraphic(g.id,{duration:clamp(Number(e.target.value)||2.8,.4,12)})}/></label>
-                      <div className="graphic-actions">
-                        <button type="button" className="text-action" disabled={!ready || busy || first === undefined} onClick={() => jumpTo(first+.2)}>Посмотреть</button>
-                        <button type="button" className="text-action danger" disabled={busy} onClick={() => {setGraphics(prev => prev.filter(item => item.id!==g.id)); invalidate();}}>Удалить</button>
-                      </div>
-                    </div>
-                  </details>;
-                })}
-              </div>}
-              <p className="hint">По слову элемент появляется при совпадениях в субтитрах с таймингом; подбор по смыслу не выполняется. При пересечении показывается первый элемент. До 12 элементов и 4 изображений.</p>
-            </div>
             <div className="section review-section" aria-label="План и проверка" hidden={activeTab !== "export"}>
               <div className="sec-title">
                 <div className="sec-name"><LuCircleCheck size={15} /> План и проверка</div>
-                <span className="auto-pill">БЕЗ ИИ</span>
+                
               </div>
               {!ready ? <p className="hint">Загрузи видео, чтобы увидеть план и подсказки.</p> : <>
                 <p className="hint auto-intro">Проверка сравнивает только время, а не смысл или звук. Время ниже — по исходнику, до склеек.</p>
@@ -2521,12 +2129,9 @@ function App() {
           </aside>
         </div>
         <div className="footnote">
-          <span>
-            Без подписки. Проверь текст, склейки и готовый ролик перед публикацией. Для продолжения позже сохрани проект.
-          </span>
-          <span>Анимация: Canvas · Видео: Mediabunny и FFmpeg.wasm
-            {location.protocol !== "file:" && <> · <a href="./LICENSES.txt" target="_blank" rel="noreferrer">Лицензии</a>
-              {" · "}<a href="./source/kadr-source.zip">Исходники</a></>}
+          <span>Проверь текст, склейки и готовый ролик перед публикацией.</span>
+          <span><a href="./desktop/kadr-desktop.zip" download>Скачать для Windows</a>
+            {location.protocol !== "file:" && <> · <a href="./LICENSES.txt" target="_blank" rel="noreferrer">Лицензии</a></>}
           </span>
         </div>
       </main>
