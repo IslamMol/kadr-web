@@ -80,10 +80,10 @@ shutil.copyfile(upstream,source_dir/'ffmpeg-wasm-source.tar.gz')
 source_files=['README.md','package.json','app.jsx','asr.js','beat.js','build.py','director.js',
  'quality.js','visuals.js','voice.js','local-tts.js','supertonic-helper.txt','project.js',
  'converter.js','converter-worker.txt','ffmpeg-core.txt','styles.css','manifest.webmanifest',
- 'edl.js','frame.js','ghost.js','takes.js','templates.js','project3.js','approval.js','THIRD_PARTY.md',
+ 'edl.js','frame.js','ghost.js','takes.js','snap.js','templates.js','project3.js','approval.js','THIRD_PARTY.md',
  'studio3.jsx','studio3.css','studio3.template.html','tools/render-edl.mjs',
  'sw-template.js','demo-portrait.mp4','demo-sticker.png','test-beat.cjs','test-motion.cjs',
- 'test-project.cjs','test-quality.cjs','test-voice-unit.cjs','test-edl.mjs','test-frame.mjs','test-templates.mjs','test-project3.mjs','test-approval.mjs']
+ 'test-project.cjs','test-quality.cjs','test-voice-unit.cjs','test-edl.mjs','test-frame.mjs','test-templates.mjs','test-project3.mjs','test-approval.mjs','test-snap.mjs']
 source_files += [str(x.relative_to(p)) for folder in ('icons','fonts','notices','upstream')
                  for x in sorted((p/folder).iterdir()) if x.is_file()]
 with zipfile.ZipFile(source_dir/'kadr-source.zip','w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:

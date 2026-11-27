@@ -47,6 +47,8 @@ input[type=range]{padding:0;accent-color:#b9c6ff}
 .timeline{position:relative;height:34px;border:1px solid #2a2d35;border-radius:9px;background:repeating-linear-gradient(90deg,#101217 0,#101217 9%,#171a20 9%,#171a20 10%);overflow:hidden;cursor:default}
 .timeline .cut{position:absolute;top:0;bottom:0;width:8px;margin-left:-4px;padding:0;border:0;background:#ff6b6b;opacity:.8;cursor:ew-resize;z-index:3;pointer-events:auto}
 .timeline .cut:after{content:'';position:absolute;left:3px;top:0;bottom:0;width:2px;background:#fff;opacity:.65}
+.timeline .cut.snapped{background:#5ce1a6;box-shadow:0 0 10px #5ce1a6}
+.timeline .scene-chip.snapped{outline:2px solid #5ce1a6;outline-offset:1px}
 .timeline .cut:hover{width:4px;opacity:1}
 .timeline .scene-chip{position:absolute;top:5px;height:22px;min-width:14px;border-radius:6px;background:var(--chip,#b9c6ff);border:0;cursor:grab;font-size:9px;color:#101217;font-weight:800;padding:2px 4px;overflow:hidden;white-space:nowrap}
 .timeline .scene-chip:active{cursor:grabbing}

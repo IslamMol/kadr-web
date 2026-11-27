@@ -14,6 +14,7 @@ import { createASRWorker, wordsToCues } from "./asr.js";
 import { KADR_TEMPLATES, KADR_EXAMPLES, templateById, planBeats } from "./templates.js";
 import { createProject3, readProject3 } from "./project3.js";
 import { buildApprovalSheet, qaApproval } from "./approval.js";
+import { wordBoundaries, snapTime } from "./snap.js";
 
 const $ = (s) => document.querySelector(s);
 const W = 1080, H = 1920;
@@ -22,7 +23,7 @@ const state = {
   t: 0, playing: false, template: "clean", busy: false, conversion: null, result: null,
   cues: null, excluded: new Set(), asrBusy: false, asrWorker: null,
   manualGraphics: [], approved: false, drag: null,
-  cutDeltas: {}, originalBounds: [],
+  cutDeltas: {}, originalBounds: [], snapPoints: [],
 };
 
 function coverDraw(ctx, video, x, y, w, h) {
@@ -104,6 +105,7 @@ function buildEdl() {
     name: "Кадр 3.0", output: { width: W, height: H, fps: 30 },
     clips, captions: cues, graphics, motion, look,
   });
+  state.snapPoints = wordBoundaries(state.edl);
   state.t = 0;
   $("#range").max = String(Math.max(0.1, state.edl.duration));
   $("#range").value = "0";
@@ -214,11 +216,17 @@ function onDragMove(e) {
   if (!d || !state.edl) return;
   const dur = Math.max(0.001, state.edl.duration);
   const delta = (e.clientX - d.startX) / Math.max(1, d.rect.width) * dur;
-  d.at = Math.max(0, Math.min(dur, d.startAt + delta));
+  const raw = Math.max(0, Math.min(dur, d.startAt + delta));
+  const tol = Math.max(0.02, 10 / Math.max(1, d.rect.width) * dur);
+  const snapped = snapTime(raw, state.snapPoints, tol);
+  d.at = snapped.time; d.snapped = snapped.snapped;
   const el = d.type === "cut"
     ? document.querySelector(`[data-cut="${d.index}"]`)
     : document.querySelector(`[data-scene="${d.id}"]`);
-  if (el) el.style.left = `${Math.min(99, d.at / dur * 100)}%`;
+  if (el) {
+    el.style.left = `${Math.min(99, d.at / dur * 100)}%`;
+    el.classList.toggle("snapped", snapped.snapped);
+  }
 }
 
 function onDragEnd() {
@@ -289,6 +297,7 @@ async function openProject(file) {
     $("#in").value = String(project.editor.start);
     $("#out").value = String(project.editor.end);
     state.edl = project.edl;
+    state.snapPoints = wordBoundaries(state.edl);
     $("#range").max = String(Math.max(0.1, state.edl.duration));
     state.t = 0;
     document.querySelectorAll("[data-template]").forEach(x => x.classList.toggle("active", x.dataset.template === state.template));
