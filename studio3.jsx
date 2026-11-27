@@ -22,6 +22,7 @@ const state = {
   t: 0, playing: false, template: "clean", busy: false, conversion: null, result: null,
   cues: null, excluded: new Set(), asrBusy: false, asrWorker: null,
   manualGraphics: [], approved: false, drag: null,
+  cutDeltas: {}, originalBounds: [],
 };
 
 function coverDraw(ctx, video, x, y, w, h) {
@@ -29,6 +30,23 @@ function coverDraw(ctx, video, x, y, w, h) {
   const scale = Math.max(w / vw, h / vh);
   const dw = vw * scale, dh = vh * scale;
   ctx.drawImage(video, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+}
+
+// Сдвиг внутренней склейки: оба соседних клипа двигаются на одинаковую
+// дельту, поэтому длительность и тайминг субтитров остаются согласованными.
+function applyCutDeltas(clips) {
+  const out = clips.map(c => ({ ...c }));
+  state.originalBounds = out.map(c => c.out);
+  for (const [key, val] of Object.entries(state.cutDeltas || {})) {
+    const i = Number(key);
+    if (!val || !out[i + 1] || Math.abs(out[i].out - Number(val.base)) > 0.05) continue;
+    const lo = Math.max(out[i].in + 0.1 - out[i].out, -out[i + 1].in);
+    const hi = Math.min((state.duration || 1e6) - out[i].out, out[i + 1].out - 0.1 - out[i + 1].in);
+    const d = Math.max(lo, Math.min(hi, Number(val.delta) || 0));
+    out[i].out = Math.max(out[i].in + 0.1, out[i].out + d);
+    out[i + 1].in = Math.max(0, out[i + 1].in + d);
+  }
+  return out;
 }
 
 function buildEdl() {
@@ -55,6 +73,7 @@ function buildEdl() {
       in: Math.max(start, p.from), out: Math.min(end, Math.max(p.from + 0.04, p.to)),
     })).filter(c => c.out > c.in);
     if (!clips.length) clips = [{ id: "main", src: "video", in: start, out: end }];
+    clips = applyCutDeltas(clips);
     const base = normalizeEdl({ output: { width: W, height: H, fps: 30 }, clips, look });
     cues = mapCuesToOutput(base, (plan.sentences.length ? plan.sentences : selected).map(c => ({
       ...c, template: captionTemplate, keyword: String(c.text || "").split(/\s+/)[0] || "",
@@ -64,6 +83,7 @@ function buildEdl() {
     const lines = ($("#words")?.value || "").split(/\n+/).map(x => x.trim()).filter(Boolean).slice(0, 30);
     const step = lines.length ? span / lines.length : 0;
     clips = [{ id: "main", src: "video", in: start, out: end }];
+    state.originalBounds = clips.map(c => c.out);
     cues = lines.map((text, i) => ({
       id: `cue-${i + 1}`, start: i * step, end: (i + 1) * step,
       text, template: captionTemplate, keyword: text.split(/\s+/)[0] || "",
@@ -154,10 +174,20 @@ function renderTimeline() {
   const dur = Math.max(0.001, state.edl.duration);
   bar.innerHTML = "";
   state.edl.spans.slice(0, -1).forEach((s, i) => {
-    const cut = document.createElement("span");
-    cut.className = "cut"; cut.style.left = `${s.end / dur * 100}%`;
-    cut.title = `Склейка ${i + 1}`;
-    cut.addEventListener("click", () => jumpTo(s.end));
+    const cut = document.createElement("button");
+    cut.type = "button"; cut.className = "cut"; cut.dataset.cut = String(i);
+    cut.dataset.base = String(state.originalBounds[i] ?? s.end);
+    cut.style.left = `${s.end / dur * 100}%`;
+    cut.title = `Склейка ${i + 1} — перетащи или нажми для перехода`;
+    cut.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const rect = bar.getBoundingClientRect();
+      state.drag = {
+        type: "cut", index: i, startX: e.clientX, startAt: s.end, at: s.end,
+        base: Number(cut.dataset.base), rect,
+      };
+      try { cut.setPointerCapture?.(e.pointerId); } catch {}
+    });
     bar.appendChild(cut);
   });
   state.manualGraphics.forEach(g => {
@@ -169,7 +199,7 @@ function renderTimeline() {
     chip.addEventListener("pointerdown", (e) => {
       e.preventDefault();
       const rect = bar.getBoundingClientRect();
-      state.drag = { id: g.id, startX: e.clientX, startAt: g.at, at: g.at, rect };
+      state.drag = { type: "scene", id: g.id, startX: e.clientX, startAt: g.at, at: g.at, rect };
       try { chip.setPointerCapture?.(e.pointerId); } catch {}
     });
     bar.appendChild(chip);
@@ -185,14 +215,27 @@ function onDragMove(e) {
   const dur = Math.max(0.001, state.edl.duration);
   const delta = (e.clientX - d.startX) / Math.max(1, d.rect.width) * dur;
   d.at = Math.max(0, Math.min(dur, d.startAt + delta));
-  const chip = document.querySelector(`[data-scene="${d.id}"]`);
-  if (chip) chip.style.left = `${Math.min(97, d.at / dur * 100)}%`;
+  const el = d.type === "cut"
+    ? document.querySelector(`[data-cut="${d.index}"]`)
+    : document.querySelector(`[data-scene="${d.id}"]`);
+  if (el) el.style.left = `${Math.min(99, d.at / dur * 100)}%`;
 }
 
 function onDragEnd() {
   const d = state.drag;
   if (!d) return;
   state.drag = null;
+  if (d.type === "cut") {
+    const moved = d.at - d.startAt;
+    if (Math.abs(moved) < 0.03) jumpTo(d.startAt);
+    else {
+      const key = String(d.index);
+      const prev = state.cutDeltas[key];
+      state.cutDeltas[key] = { delta: (prev?.delta || 0) + moved, base: prev?.base ?? d.base };
+      buildEdl();
+    }
+    return;
+  }
   updateScene(d.id, "at", d.at);
 }
 
@@ -219,7 +262,7 @@ async function saveProject() {
       edl: state.edl,
       editor: {
         template: state.template, cues: state.cues || [], excluded: [...state.excluded],
-        words: $("#words").value, manualGraphics: state.manualGraphics,
+        words: $("#words").value, manualGraphics: state.manualGraphics, cutDeltas: state.cutDeltas,
         start: $("#in").value, end: $("#out").value,
       },
     }, state.file);
@@ -241,6 +284,7 @@ async function openProject(file) {
     state.cues = project.editor.cues.length ? project.editor.cues : null;
     state.excluded = new Set(project.editor.excluded);
     state.manualGraphics = project.editor.manualGraphics;
+    state.cutDeltas = project.editor.cutDeltas || {};
     $("#words").value = project.editor.words;
     $("#in").value = String(project.editor.start);
     $("#out").value = String(project.editor.end);

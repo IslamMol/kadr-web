@@ -14,6 +14,7 @@ const editor = {
   cues: [{ id: "a", start: 1.2, end: 2, text: "Привет", words: [{ text: "Привет", start: 1.2, end: 2 }] }],
   excluded: ["old"],
   manualGraphics: [{ id: "m1", type: "stamp", at: 0.8, duration: 1, label: "МИФ", steps: ["a"] }],
+  cutDeltas: { "0": { delta: 0.25, base: 2 } },
 };
 const video = new Blob(["FAKEVIDEO"], { type: "video/mp4" });
 const project = createProject3({ edl, editor }, Object.assign(video, { name: "talk.mp4" }));
@@ -27,6 +28,7 @@ assert.equal(loaded.editor.template, "caption-news");
 assert.equal(loaded.editor.cues.length, 1);
 assert.deepEqual(loaded.editor.excluded, ["old"]);
 assert.equal(loaded.editor.manualGraphics[0].label, "МИФ");
+assert.equal(loaded.editor.cutDeltas["0"].delta, 0.25);
 assert.equal(normalizeEditor({ template: "x" }).template, "x");
 
 await assert.rejects(() => readProject3(new Blob(["not a project"])), /не проект/i);

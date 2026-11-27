@@ -42,6 +42,10 @@ export function normalizeEditor(raw = {}) {
         template: text(g.template, 40) || "clean",
       }];
     }) : [],
+    cutDeltas: raw.cutDeltas && typeof raw.cutDeltas === "object" && !Array.isArray(raw.cutDeltas)
+      ? Object.fromEntries(Object.entries(raw.cutDeltas).slice(0, 20).map(([k, v]) => [String(k).slice(0, 8), {
+          delta: num(v?.delta, 0, -1e6, 1e6), base: num(v?.base, 0, 0, 1e6),
+        }])) : {},
     start: num(raw.start, 0, 0, 1e6),
     end: num(raw.end, 0, 0, 1e6),
   };
