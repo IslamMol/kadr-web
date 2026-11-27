@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "private": true,
   "scripts": {
-    "build": "esbuild app.jsx --bundle --minify --format=iife --platform=browser --loader:.txt=text --outfile=bundle.js && python build.py",
+    "build": "esbuild app.jsx --bundle --minify --format=iife --platform=browser --loader:.txt=text --outfile=bundle.js && esbuild studio3.jsx --bundle --minify --format=iife --platform=browser --outfile=studio3-bundle.js && python build.py",
     "test": "esbuild quality.js --bundle --platform=node --format=cjs --outfile=quality-test-bundle.cjs && node test-quality.cjs && esbuild voice.js --bundle --platform=node --format=cjs --outfile=voice-test-bundle.cjs && esbuild local-tts.js --bundle --platform=node --format=cjs --loader:.txt=text --outfile=tts-test-bundle.cjs && node test-voice-unit.cjs && esbuild project.js --bundle --platform=node --format=cjs --outfile=project-test-bundle.cjs && node test-project.cjs && esbuild beat.js --bundle --platform=node --format=cjs --outfile=beat-test-bundle.cjs && node test-beat.cjs && esbuild visuals.js --bundle --platform=node --format=cjs --outfile=motion-test-bundle.cjs && node test-motion.cjs && esbuild ghost.js --bundle --platform=node --format=cjs --outfile=ghost-bundle.cjs && node test-ghost.cjs && node test-takes.mjs && node test-edl.mjs && node test-frame.mjs"
   },
   "dependencies": {

@@ -1,5 +1,6 @@
 node_modules/
 bundle.js
+studio3-bundle.js
 *-test-bundle.cjs
 desktop/kadr-desktop.zip
 site/desktop/kadr-desktop.zip

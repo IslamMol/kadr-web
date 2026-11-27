@@ -34,9 +34,16 @@ if(location.protocol!=="file:" && window.isSecureContext){
 </script>'''
 html=f'''<!doctype html><html lang="ru"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#17181c"><meta name="description" content="Редактор вертикальных видео, субтитров и графики."><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="Кадр"><link rel="manifest" href="./manifest.webmanifest"><link rel="icon" href="./icons/icon-192.png" sizes="192x192"><link rel="apple-touch-icon" href="./icons/apple-touch-icon.png"><title>Кадр — редактор коротких видео</title>{boot}<style>{css}</style></head><body><div id="root"></div><script>window.DEMO_VIDEO="data:video/mp4;base64,{demo}";window.DEMO_STICKER="data:image/png;base64,{sticker}";</script><script>{js}</script><!-- {lic} --></body></html>'''
 (p/'kadr.html').write_text(html, encoding='utf-8')
+# Кадр 3.0: отдельная студия на EDL-ядре, та же страница в корне и на сайте.
+studio3=((p/'studio3.template.html').read_text(encoding='utf-8')
+  .replace('__FONT__',fontcss)
+  .replace('__CSS__',(p/'studio3.css').read_text(encoding='utf-8'))
+  .replace('__JS__',(p/'studio3-bundle.js').read_text(encoding='utf-8').replace('</script','<\\/script')))
+(p/'studio3.html').write_text(studio3,encoding='utf-8')
 site=p/'site'
 site.mkdir(exist_ok=True)
 (site/'index.html').write_text(html,encoding='utf-8')
+(site/'studio3.html').write_text(studio3,encoding='utf-8')
 shutil.copyfile(p/'manifest.webmanifest',site/'manifest.webmanifest')
 (site/'.nojekyll').write_text('',encoding='utf-8')
 (site/'LICENSES.txt').write_text(lic,encoding='utf-8')
@@ -72,8 +79,10 @@ shutil.copyfile(upstream,source_dir/'ffmpeg-wasm-source.tar.gz')
 source_files=['README.md','package.json','app.jsx','asr.js','beat.js','build.py','director.js',
  'quality.js','visuals.js','voice.js','local-tts.js','supertonic-helper.txt','project.js',
  'converter.js','converter-worker.txt','ffmpeg-core.txt','styles.css','manifest.webmanifest',
+ 'edl.js','frame.js','ghost.js','takes.js','THIRD_PARTY.md',
+ 'studio3.jsx','studio3.css','studio3.template.html','tools/render-edl.mjs',
  'sw-template.js','demo-portrait.mp4','demo-sticker.png','test-beat.cjs','test-motion.cjs',
- 'test-project.cjs','test-quality.cjs','test-voice-unit.cjs']
+ 'test-project.cjs','test-quality.cjs','test-voice-unit.cjs','test-edl.mjs','test-frame.mjs']
 source_files += [str(x.relative_to(p)) for folder in ('icons','fonts','notices','upstream')
                  for x in sorted((p/folder).iterdir()) if x.is_file()]
 with zipfile.ZipFile(source_dir/'kadr-source.zip','w',zipfile.ZIP_DEFLATED,compresslevel=6) as z:
