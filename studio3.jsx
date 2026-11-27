@@ -13,6 +13,7 @@ import { planGhostEdit } from "./ghost.js";
 import { createASRWorker, wordsToCues } from "./asr.js";
 import { KADR_TEMPLATES, KADR_EXAMPLES, templateById, planBeats } from "./templates.js";
 import { createProject3, readProject3 } from "./project3.js";
+import { buildApprovalSheet, qaApproval } from "./approval.js";
 
 const $ = (s) => document.querySelector(s);
 const W = 1080, H = 1920;
@@ -20,7 +21,7 @@ const state = {
   file: null, url: null, video: null, duration: 0, edl: null,
   t: 0, playing: false, template: "clean", busy: false, conversion: null, result: null,
   cues: null, excluded: new Set(), asrBusy: false, asrWorker: null,
-  manualGraphics: [],
+  manualGraphics: [], approved: false, drag: null,
 };
 
 function coverDraw(ctx, video, x, y, w, h) {
@@ -87,8 +88,12 @@ function buildEdl() {
   $("#range").max = String(Math.max(0.1, state.edl.duration));
   $("#range").value = "0";
   $("#status").textContent = `${tpl.name}: ${state.edl.duration.toFixed(1)} с, ${clips.length} склеек, ${cues.length} фраз, ${graphics.length} сцен.`;
+  state.approved = false;
+  const consent = $("#approved"); if (consent) consent.checked = false;
   renderCues();
   renderScenes();
+  renderTimeline();
+  renderApproval();
   draw();
 }
 
@@ -135,6 +140,78 @@ function updateScene(id, field, value) {
   buildEdl();
 }
 
+function jumpTo(t) {
+  if (!state.edl) return;
+  state.t = Math.max(0, Math.min(state.edl.duration, t));
+  const r = $("#range"); if (r) r.value = String(state.t);
+  if (state.video && !state.playing) state.video.currentTime = sourceTimeAt(state.edl, state.t);
+  draw();
+}
+
+function renderTimeline() {
+  const bar = $("#timeline");
+  if (!bar || !state.edl) return;
+  const dur = Math.max(0.001, state.edl.duration);
+  bar.innerHTML = "";
+  state.edl.spans.slice(0, -1).forEach((s, i) => {
+    const cut = document.createElement("span");
+    cut.className = "cut"; cut.style.left = `${s.end / dur * 100}%`;
+    cut.title = `Склейка ${i + 1}`;
+    cut.addEventListener("click", () => jumpTo(s.end));
+    bar.appendChild(cut);
+  });
+  state.manualGraphics.forEach(g => {
+    const chip = document.createElement("button");
+    chip.type = "button"; chip.className = "scene-chip"; chip.dataset.scene = g.id;
+    chip.style.left = `${Math.min(97, g.at / dur * 100)}%`;
+    chip.style.setProperty("--chip", templateById(state.template).accent);
+    chip.textContent = g.type; chip.title = `${g.type} · ${g.at.toFixed(1)}с — перетащи`;
+    chip.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      const rect = bar.getBoundingClientRect();
+      state.drag = { id: g.id, startX: e.clientX, startAt: g.at, at: g.at, rect };
+      try { chip.setPointerCapture?.(e.pointerId); } catch {}
+    });
+    bar.appendChild(chip);
+  });
+  const head = document.createElement("span");
+  head.className = "playhead"; head.style.left = `${state.t / dur * 100}%`;
+  bar.appendChild(head);
+}
+
+function onDragMove(e) {
+  const d = state.drag;
+  if (!d || !state.edl) return;
+  const dur = Math.max(0.001, state.edl.duration);
+  const delta = (e.clientX - d.startX) / Math.max(1, d.rect.width) * dur;
+  d.at = Math.max(0, Math.min(dur, d.startAt + delta));
+  const chip = document.querySelector(`[data-scene="${d.id}"]`);
+  if (chip) chip.style.left = `${Math.min(97, d.at / dur * 100)}%`;
+}
+
+function onDragEnd() {
+  const d = state.drag;
+  if (!d) return;
+  state.drag = null;
+  updateScene(d.id, "at", d.at);
+}
+
+function renderApproval() {
+  const list = $("#approval-list");
+  if (!list || !state.edl) return;
+  const sheet = buildApprovalSheet(state.edl);
+  const warnings = qaApproval(state.edl, sheet);
+  list.innerHTML = sheet.length ? sheet.map((p, i) =>
+    `<button type="button" class="approval-row" data-approval="${i}"><time>${p.time.toFixed(2)}с</time><span><strong>${p.title}</strong><small>${esc(p.detail)}</small></span></button>`
+  ).join("") : '<p class="hint">Точек проверки нет.</p>';
+  const warnBox = $("#approval-warnings");
+  if (warnBox) warnBox.innerHTML = warnings.map(w => `<p><strong>${esc(w.title)}.</strong> ${esc(w.detail)}</p>`).join("");
+  const summary = $("#approval-box summary");
+  if (summary) summary.textContent = `Лист проверки перед сборкой · ${sheet.length}`;
+  const btn = $("#export");
+  if (btn) btn.disabled = sheet.length > 0 && !state.approved;
+}
+
 async function saveProject() {
   if (!state.file || !state.edl || state.busy) return;
   try {
@@ -171,7 +248,9 @@ async function openProject(file) {
     $("#range").max = String(Math.max(0.1, state.edl.duration));
     state.t = 0;
     document.querySelectorAll("[data-template]").forEach(x => x.classList.toggle("active", x.dataset.template === state.template));
-    renderCues(); renderScenes(); draw();
+    state.approved = false;
+    const consent = $("#approved"); if (consent) consent.checked = false;
+    renderCues(); renderScenes(); renderTimeline(); renderApproval(); draw();
     $("#status").textContent = `Открыт проект: ${project.name}. ${state.edl.duration.toFixed(1)} с, ${state.edl.clips.length} склеек.`;
   } catch (e) { $("#status").textContent = e?.message || "Не удалось открыть проект."; }
 }
@@ -253,6 +332,8 @@ function draw() {
   } : {};
   renderFrame(ctx, state.edl, state.t, sources);
   $("#time").textContent = `${state.t.toFixed(1)} / ${state.edl.duration.toFixed(1)} с`;
+  const head = $("#timeline .playhead");
+  if (head) head.style.left = `${state.t / Math.max(0.001, state.edl.duration) * 100}%`;
 }
 
 async function loadFile(file) {
@@ -277,6 +358,10 @@ async function loadFile(file) {
 
 async function exportMp4() {
   if (!state.file || !state.edl || state.busy) return;
+  if (buildApprovalSheet(state.edl).length > 0 && !state.approved) {
+    $("#status").textContent = "Сначала отметь лист проверки выше.";
+    return;
+  }
   state.busy = true;
   const btn = $("#export"); btn.disabled = true; btn.textContent = "Собираем…";
   $("#progress").style.display = "block";
@@ -417,6 +502,16 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#save-project").addEventListener("click", saveProject);
   $("#open-project").addEventListener("click", () => $("#project-file").click());
   $("#project-file").addEventListener("change", e => openProject(e.target.files?.[0]));
+  $("#approved").addEventListener("change", e => { state.approved = e.target.checked; renderApproval(); });
+  $("#approval-list").addEventListener("click", e => {
+    const row = e.target.closest("[data-approval]"); if (!row) return;
+    const sheet = buildApprovalSheet(state.edl);
+    const point = sheet[Number(row.dataset.approval)];
+    if (point) jumpTo(point.time);
+  });
+  document.addEventListener("pointermove", onDragMove);
+  document.addEventListener("pointerup", onDragEnd);
+  document.addEventListener("pointercancel", onDragEnd);
   $("#range").addEventListener("input", e => {
     state.t = Number(e.target.value);
     if (state.video && !state.playing && state.edl) state.video.currentTime = sourceTimeAt(state.edl, state.t);
@@ -449,5 +544,5 @@ document.addEventListener("DOMContentLoaded", () => {
     captions: [{ start: 0.4, end: 5.6, text: "Загрузи видео, напиши фразы и нажми приём", template: "clean" }],
     look: { preset: "clean", accent: "#ffd23f" },
   });
-  $("#range").max = "6"; renderScenes(); draw();
+  $("#range").max = "6"; renderScenes(); renderTimeline(); renderApproval(); draw();
 });
