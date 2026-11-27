@@ -1,0 +1,7 @@
+node_modules/
+bundle.js
+*-test-bundle.cjs
+desktop/kadr-desktop.zip
+site/desktop/kadr-desktop.zip
+site/source/kadr-source.zip
+*.kadr
