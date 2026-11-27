@@ -32,3 +32,10 @@ a.download{display:none;text-decoration:none;text-align:center;background:#7ee0a
 .progress{height:5px;background:#262a31;border-radius:9px;overflow:hidden;display:none}
 .progress span{display:block;height:100%;width:0;background:#b9c6ff;transition:width .2s}
 input[type=range]{padding:0;accent-color:#b9c6ff}
+.cue-list{display:grid;gap:5px;max-height:180px;overflow:auto}
+.cue-row{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;background:#101217;border:1px solid #2a2d35;border-radius:9px;padding:6px 8px;font-size:11px}
+.cue-row input{width:auto;accent-color:#b9c6ff}
+.cue-row span{color:#d6dae2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cue-row time{color:#8f97a4;font-variant-numeric:tabular-nums}
+.card small em{display:block;margin-top:3px;color:#7f8794;font-style:normal;font-size:9px}
+.card.active i{box-shadow:0 0 12px var(--accent,#b9c6ff)}

@@ -48,6 +48,7 @@ shutil.copyfile(p/'manifest.webmanifest',site/'manifest.webmanifest')
 (site/'.nojekyll').write_text('',encoding='utf-8')
 (site/'LICENSES.txt').write_text(lic,encoding='utf-8')
 shutil.copytree(p/'icons',site/'icons',dirs_exist_ok=True)
+shutil.copyfile(p/'demo-portrait.mp4',site/'demo-portrait.mp4')
 version=hashlib.sha256(html.encode('utf-8')).hexdigest()[:16]
 (site/'sw.js').write_text((p/'sw-template.js').read_text(encoding='utf-8').replace('__VERSION__',version),encoding='utf-8')
 core=nm/'@ffmpeg/core/dist/umd/ffmpeg-core.wasm'

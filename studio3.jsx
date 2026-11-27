@@ -9,19 +9,17 @@ import {
   normalizeEdl, outputTimeForSource, sourceTimeAt, sourceSpanAt, frameState, mapCuesToOutput, LOOKS, CAPTION_TEMPLATES,
 } from "./edl.js";
 import { renderFrame } from "./frame.js";
-import { GHOST_RECIPES, styleById, planGhostEdit } from "./ghost.js";
+import { planGhostEdit } from "./ghost.js";
 import { createASRWorker, wordsToCues } from "./asr.js";
+import { KADR_TEMPLATES, KADR_EXAMPLES, templateById, planBeats } from "./templates.js";
 
 const $ = (s) => document.querySelector(s);
 const W = 1080, H = 1920;
 const state = {
   file: null, url: null, video: null, duration: 0, edl: null,
-  t: 0, playing: false, recipe: "clean", look: "clean", busy: false, conversion: null, result: null,
+  t: 0, playing: false, template: "clean", busy: false, conversion: null, result: null,
   cues: null, excluded: new Set(), asrBusy: false, asrWorker: null,
 };
-
-const LOOK_MAP = { clean: "clean", cinematic: "cinematic", editorial: "editorial", kinetic: "kinetic", launch: "launch", meme: "magazine", pop: "magazine" };
-const CAP_MAP = { clean: "clean", serif: "blur", editorial: "highlighter", pop: "pop", type: "outline", outline: "outline", upper: "clean" };
 
 function coverDraw(ctx, video, x, y, w, h) {
   const vw = video.videoWidth || 1080, vh = video.videoHeight || 1920;
@@ -35,13 +33,11 @@ function buildEdl() {
   const rawEnd = Number($("#out")?.value);
   const end = Number.isFinite(rawEnd) && rawEnd > start ? Math.min(rawEnd, state.duration || rawEnd) : (state.duration || 6);
   const span = Math.max(0.2, end - start);
-  const s = styleById(state.recipe);
-  const template = CAP_MAP[s.effect] || "clean";
-  const preset = LOOK_MAP[state.look] || "clean";
-  const lookStyle = styleById(state.look);
-  const grain = lookStyle.film === "film" ? 0.16 : lookStyle.film === "grain" ? 0.08 : 0;
-  const look = { preset, accent: lookStyle.accent, grain, vignette: preset === "cinematic" ? 0.4 : 0.14 };
-  const graphicType = ["quote", "number", "diagram"].includes(s.scene) ? s.scene : "quote";
+  const tpl = templateById(state.template);
+  const captionTemplate = tpl.caption;
+  const grain = ["cinematic", "halftone", "ink"].includes(tpl.look) ? 0.16 : tpl.look === "paper" ? 0.06 : 0;
+  const vignette = ["cinematic", "halftone", "ink"].includes(tpl.look) ? 0.38 : 0.12;
+  const look = { preset: tpl.look, accent: tpl.accent, grain, vignette };
   let clips, cues;
 
   if (state.cues?.length) {
@@ -58,7 +54,7 @@ function buildEdl() {
     if (!clips.length) clips = [{ id: "main", src: "video", in: start, out: end }];
     const base = normalizeEdl({ output: { width: W, height: H, fps: 30 }, clips, look });
     cues = mapCuesToOutput(base, (plan.sentences.length ? plan.sentences : selected).map(c => ({
-      ...c, template, keyword: String(c.text || "").split(/\s+/)[0] || "",
+      ...c, template: captionTemplate, keyword: String(c.text || "").split(/\s+/)[0] || "",
     })));
   } else {
     // Ручной режим: фразы распределяются равномерно по выбранному куску.
@@ -67,22 +63,18 @@ function buildEdl() {
     clips = [{ id: "main", src: "video", in: start, out: end }];
     cues = lines.map((text, i) => ({
       id: `cue-${i + 1}`, start: i * step, end: (i + 1) * step,
-      text, template, keyword: text.split(/\s+/)[0] || "",
+      text, template: captionTemplate, keyword: text.split(/\s+/)[0] || "",
       words: text.split(/\s+/).filter(Boolean).map((w, n, all) => ({
         text: w, start: i * step + step * n / all.length, end: i * step + step * (n + 1) / all.length,
       })),
     }));
   }
 
-  const finalSpan = clips.reduce((sum, c) => sum + (c.out - c.in), 0);
-  const graphics = cues.length ? [{
-    id: "beat", type: graphicType, at: finalSpan * 0.55, duration: Math.min(2.6, finalSpan * 0.4),
-    label: graphicType === "number" ? String(cues.length) + " фраз" : cues[0].text,
-    value: String(cues.length), steps: cues.slice(0, 4).map(c => c.text), template,
-  }] : [];
-  const motion = s.kinetic === "headline" ? [] : [{
-    id: "motion", type: s.kinetic === "spring" ? "word-slam" : s.kinetic === "scramble" ? "spring" : "rise",
-    at: 0, duration: Math.min(0.8, finalSpan * 0.3),
+  const graphics = planBeats(cues, tpl.id);
+  const beatSpan = cues.length ? cues[cues.length - 1].end : span;
+  const motion = [{
+    id: "motion", type: tpl.motion === "scramble" ? "spring" : tpl.motion,
+    at: 0, duration: Math.min(0.8, Math.max(0.2, beatSpan) * 0.3),
   }];
 
   state.edl = normalizeEdl({
@@ -92,7 +84,7 @@ function buildEdl() {
   state.t = 0;
   $("#range").max = String(Math.max(0.1, state.edl.duration));
   $("#range").value = "0";
-  $("#status").textContent = `Готово: ${state.edl.duration.toFixed(1)} с, ${clips.length} склеек, ${cues.length} фраз, ${graphics.length} сцена.`;
+  $("#status").textContent = `${tpl.name}: ${state.edl.duration.toFixed(1)} с, ${clips.length} склеек, ${cues.length} фраз, ${graphics.length} сцен.`;
   renderCues();
   draw();
 }
@@ -266,13 +258,37 @@ async function exportMp4() {
   }
 }
 
+async function loadExample(id) {
+  const ex = KADR_EXAMPLES.find(x => x.id === id);
+  if (!ex || state.busy) return;
+  try {
+    if (!state.file) {
+      const res = await fetch("./demo-portrait.mp4");
+      if (!res.ok) throw new Error("Пример не найден рядом со страницей.");
+      const blob = await res.blob();
+      await loadFile(new File([blob], "демо-дубль.mp4", { type: "video/mp4" }));
+    }
+    state.template = ex.template;
+    state.cues = ex.cues.map(c => ({ ...c, id: c.id || `ex-${Math.random().toString(36).slice(2, 8)}` }));
+    state.excluded = new Set();
+    $("#words").value = state.cues.map(c => c.text).join("\n");
+    document.querySelectorAll("[data-template]").forEach(x => x.classList.toggle("active", x.dataset.template === ex.template));
+    document.querySelectorAll("[data-example]").forEach(x => x.classList.toggle("active", x.dataset.example === id));
+    $("#status").textContent = ex.note;
+    buildEdl();
+  } catch (e) {
+    $("#status").textContent = e?.message || "Не удалось открыть пример.";
+  }
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  $("#recipes").innerHTML = GHOST_RECIPES.map(r => {
-    const s = styleById(r.style);
-    return `<button type="button" class="card" data-recipe="${r.id}" style="--accent:${s.accent}"><i></i><strong>${r.name}</strong><small>${r.what}</small></button>`;
-  }).join("");
-  const lookNames = { clean: "Чистый", editorial: "Редакционный", kinetic: "Кинетический", cinematic: "Кино", launch: "Запуск", magazine: "Журнал" };
-  $("#looks").innerHTML = LOOKS.map(id => `<button type="button" class="card" data-look="${id}"><i style="--accent:${id === "cinematic" ? "#e7c27a" : "#b9c6ff"}"></i><strong>${lookNames[id] || id}</strong></button>`).join("");
+  window.__kadr3 = state; // debugging / tests: живой EDL доступен из консоли
+  $("#templates").innerHTML = KADR_TEMPLATES.map(t =>
+    `<button type="button" class="card" data-template="${t.id}" style="--accent:${t.accent}"><i></i><strong>${t.name}</strong><small>${t.what}<br><em>${t.bestFor}</em></small></button>`
+  ).join("");
+  $("#examples").innerHTML = KADR_EXAMPLES.map(e =>
+    `<button type="button" class="card" data-example="${e.id}"><i style="--accent:#b9c6ff"></i><strong>${e.name}</strong><small>${e.note}</small></button>`
+  ).join("");
   $("#file").addEventListener("change", e => loadFile(e.target.files?.[0]).catch(err => { $("#status").textContent = err.message; }));
   $("#build").addEventListener("click", buildEdl);
   $("#export").addEventListener("click", exportMp4);
@@ -294,17 +310,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.checked) state.excluded.delete(id); else state.excluded.add(id);
     buildEdl();
   });
-  $("#recipes").addEventListener("click", e => {
-    const b = e.target.closest("[data-recipe]"); if (!b) return;
-    state.recipe = b.dataset.recipe;
-    document.querySelectorAll("[data-recipe]").forEach(x => x.classList.toggle("active", x === b));
+  $("#templates").addEventListener("click", e => {
+    const b = e.target.closest("[data-template]"); if (!b) return;
+    state.template = b.dataset.template;
+    document.querySelectorAll("[data-template]").forEach(x => x.classList.toggle("active", x === b));
     buildEdl();
   });
-  $("#looks").addEventListener("click", e => {
-    const b = e.target.closest("[data-look]"); if (!b) return;
-    state.look = b.dataset.look;
-    document.querySelectorAll("[data-look]").forEach(x => x.classList.toggle("active", x === b));
-    buildEdl();
+  $("#examples").addEventListener("click", e => {
+    const b = e.target.closest("[data-example]"); if (!b) return;
+    loadExample(b.dataset.example);
   });
   $("#range").addEventListener("input", e => {
     state.t = Number(e.target.value);
@@ -331,8 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
       v.pause(); state.playing = false; $("#play").textContent = "Играть";
     }
   });
-  document.querySelector('[data-recipe="clean"]')?.classList.add("active");
-  document.querySelector('[data-look="clean"]')?.classList.add("active");
+  document.querySelector('[data-template="clean"]')?.classList.add("active");
   state.edl = normalizeEdl({
     output: { width: W, height: H, fps: 30 },
     clips: [{ id: "main", src: "video", in: 0, out: 6 }],

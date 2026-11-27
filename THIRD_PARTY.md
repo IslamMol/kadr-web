@@ -9,6 +9,13 @@
 | [Motionity](https://github.com/JoshuaRileyDev/motionity) | `d546e0f76a63b369038f852a835777796a266cb9` | MIT | UX reference: keyframes, masking, filters, layer inspector. Not copied as a runtime. |
 | [OpenVideo](https://github.com/clawnify/OpenVideo) | `a82180eedccd6a215a1eae89b2cec81f2f4caa8c` | MIT | EDL idea: plain JSON edit decision list, timeline/overlay model, agent-readable project. Schema inspiration, not a runtime copy. |
 
+| [EasyReels](https://github.com/valedol190387/EasyReels) | `e2ed34855cb58c36bead3e15efa42511a821da5e` | MIT | Готовый графический набор для talking-head, правила чистки дублей, face-aware placement, rattracker по словам. Источник идей для `board-face`. |
+| [Herk Edit Kit](https://github.com/nateherkai/herk-edit-kit) | `10511e5af86fc47756ea89803b397422e2d89284` | проверьте LICENSE в `vendor/herk-edit-kit` | 406 motion-карточек, editing playbook, short-form workflow. Используем как каталог-референс. |
+| [Product Launch Motion](https://github.com/AbubakrChan/product-launch-motion) | `edbfb105382f21507bad895d8b5f6e0faa67487c` | MIT | morph одного элемента, Springs, music-first тайминг. Источник для `product-launch`. |
+| [Animate](https://github.com/cth9191/animate) | `7e5eb56feb2dd573f890e1b7b34748af43d58263` | MIT | Style-as-plugin, story grammar, style gallery, seeded randomness. Референс архитектуры стилей. |
+| [Motion](https://github.com/motiondivision/motion) | `6390e6d2ddde40128258aaa0499587505f008f1e` | проверьте LICENSE в `vendor/motion` | Движок анимации, reference для timed values и easing. |
+| [Remotion](https://github.com/remotion-dev/remotion) | `1c5dc595aa1fe53b152dcf1289ce0d0338e5c0a3` | Remotion License (source-available) | Референс render-as-code. Код не копируем в браузерный бандл. |
+
 ## Правила интеграции
 
 1. Не тащим целый large framework в браузерный бандл.

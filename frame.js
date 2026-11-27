@@ -10,6 +10,11 @@ const PALETTE = {
   cinematic: { bg: "#0f0f10", fg: "#ede6da", accent: "#e7c27a", muted: "#b7ad9e" },
   launch:    { bg: "#0e0e12", fg: "#f6f4ff", accent: "#7c5cff", muted: "#b6b2c5" },
   magazine:  { bg: "#fff0f6", fg: "#111111", accent: "#ff2e88", muted: "#7f6972" },
+  paper:     { bg: "#f2eadc", fg: "#1b1a18", accent: "#d13f34", muted: "#8a8277" },
+  news:      { bg: "#111318", fg: "#fafafa", accent: "#ffd23f", muted: "#b9c0cc" },
+  ink:       { bg: "#141414", fg: "#f2f0eb", accent: "#ff3b30", muted: "#a8a49d" },
+  halftone:  { bg: "#efe3cb", fg: "#1c1a15", accent: "#c2703a", muted: "#8d7f68" },
+  board:     { bg: "#0f1715", fg: "#e7f4ee", accent: "#5ce1a6", muted: "#92a9a0" },
 };
 const ease = (x) => { const t = Math.max(0, Math.min(1, x)); return t * t * (3 - 2 * t); };
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
@@ -72,6 +77,11 @@ function drawCaption(ctx, cue, edl, state, palette) {
   const rows = lines(ctx, cue.words, W - 150, template);
   const lineHeight = size * 1.16;
   const baseY = Math.round(H * 0.79) - rows.length * lineHeight / 2;
+  const lightLook = ["paper", "halftone", "magazine"].includes(edl.look.preset);
+  const ink = lightLook ? "#17181d" : palette.fg;
+  const mutedInk = lightLook ? "#4b4b4b" : palette.muted;
+  rr(ctx, 48, baseY - 26, W - 96, rows.length * lineHeight + 52, 22,
+     lightLook ? "rgba(255,255,255,.74)" : "rgba(8,10,14,.58)");
   ctx.save();
   ctx.textBaseline = "middle";
   ctx.textAlign = "left";
@@ -84,17 +94,23 @@ function drawCaption(ctx, cue, edl, state, palette) {
     row.forEach((w) => {
       const on = activeWord === w || (cue.words.indexOf(activeWord) > cue.words.indexOf(w) && t >= w.start + 0.25);
       const done = wordDone(cue, w, t);
-      const shown = template === "upper" ? w.text.toUpperCase() : template === "lower" ? w.text.toLowerCase() : w.text;
+      const upper = template === "upper" || template === "hype";
+      const lower = template === "lower" || template === "neominimal" || template === "line-focus";
+      const shown = upper ? w.text.toUpperCase() : lower ? w.text.toLowerCase() : w.text;
       ctx.save();
-      ctx.globalAlpha = template === "karaoke" && !done && !on ? 0.32 : 1;
-      if (template === "blur" && on) ctx.globalAlpha = 0.55 + 0.45 * ease((t - w.start) / 0.14);
-      if (template === "highlighter" && on) rr(ctx, x - 5, y - size * 0.48, w.width + 10, size * 0.96, 8, palette.accent);
+      ctx.globalAlpha = (template === "karaoke" || template === "line-focus") && !done && !on ? 0.32 : 1;
+      if (template === "blur" || template === "neominimal") {
+        ctx.globalAlpha = on ? 0.55 + 0.45 * ease((t - w.start) / 0.14) : 0.72;
+      }
+      if ((template === "highlighter" || template === "hype") && on)
+        rr(ctx, x - 5, y - size * 0.48, w.width + 10, size * 0.96, 8, palette.accent);
       if (template === "outline") {
         ctx.lineWidth = Math.max(2, size * 0.07);
         ctx.strokeStyle = on ? palette.accent : "rgba(6,7,9,.9)";
         if (typeof ctx.strokeText === "function") ctx.strokeText(shown, x, y);
       }
-      ctx.fillStyle = on ? (template === "highlighter" ? palette.bg : palette.accent) : (done ? palette.fg : palette.muted);
+      const boxed = template === "highlighter" || template === "hype";
+      ctx.fillStyle = on ? (boxed ? (lightLook ? "#ffffff" : palette.bg) : palette.accent) : (done ? ink : mutedInk);
       if (template === "pop" && on && !state.reducedMotion) {
         const p = 1 + 0.08 * ease((t - w.start) / 0.12);
         ctx.translate(x + w.width / 2, y); ctx.scale(p, p); ctx.translate(-x - w.width / 2, -y);
@@ -164,6 +180,78 @@ function drawGraphic(ctx, g, edl, state, palette) {
     ctx.fillStyle = accent; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.translate(W / 2, H * 0.40); ctx.rotate(-0.12);
     ctx.fillText(g.label.slice(0, 30).toUpperCase(), 0, 0, W - 120);
+  } else if (g.type === "stats") {
+    rr(ctx, pad, H * 0.28, boxW, 360, 22, "rgba(0,0,0,.18)");
+    font(ctx, Math.round(W * 0.16), 900);
+    ctx.fillStyle = accent; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillText(g.value || "1", pad + 30, H * 0.32);
+    font(ctx, Math.round(W * 0.045), 700);
+    ctx.fillStyle = palette.fg;
+    ctx.fillText(g.label.slice(0, 60), pad + 32, H * 0.53, boxW - 64);
+    (g.steps.length ? g.steps : ["", "", ""]).slice(0, 3).forEach((s, i) => {
+      const y = H * 0.62 + i * 58;
+      ctx.fillStyle = i === 0 ? accent : palette.muted;
+      ctx.fillRect(pad + 32, y, (boxW - 64) * (1 - i * 0.22), 7);
+      if (s) { font(ctx, 26, 600); ctx.fillStyle = palette.fg; ctx.fillText(s.slice(0, 40), pad + 32, y + 14, boxW - 70); }
+    });
+  } else if (g.type === "list") {
+    font(ctx, Math.round(W * 0.05), 800);
+    ctx.fillStyle = palette.fg; ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillText(g.label.slice(0, 50), pad, H * 0.26, boxW);
+    g.steps.slice(0, 5).forEach((s, i) => {
+      const y = H * 0.36 + i * 142;
+      rr(ctx, pad, y, boxW, 108, 14, i % 2 ? "rgba(255,255,255,.07)" : "rgba(255,255,255,.11)");
+      rr(ctx, pad + 14, y + 24, 58, 58, 12, accent);
+      font(ctx, 24, 900); ctx.fillStyle = palette.bg; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(String(i + 1).padStart(2, "0"), pad + 43, y + 53);
+      font(ctx, Math.round(W * 0.036), 700); ctx.fillStyle = palette.fg; ctx.textAlign = "left";
+      ctx.fillText(s.slice(0, 48), pad + 94, y + 54, boxW - 120);
+    });
+  } else if (g.type === "strike") {
+    font(ctx, Math.round(W * 0.075), 900);
+    ctx.fillStyle = palette.fg; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    const word = g.label.slice(0, 24).toUpperCase();
+    ctx.fillText(word, W / 2, H * 0.38, W - 120);
+    const width = Math.min(W - 140, word.length * Math.round(W * 0.055));
+    ctx.fillStyle = accent; ctx.fillRect(W / 2 - width / 2, H * 0.38, width, 8);
+    font(ctx, Math.round(W * 0.04), 700);
+    ctx.fillText("МИФ", W / 2, H * 0.38 + 90);
+  } else if (g.type === "behind") {
+    font(ctx, Math.round(W * 0.15), 900);
+    ctx.globalAlpha *= 0.28; ctx.fillStyle = accent;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(g.label.slice(0, 18).toUpperCase(), W / 2, H * 0.42, W + 60);
+    ctx.globalAlpha /= 0.28;
+  } else if (g.type === "endcard") {
+    rr(ctx, 0, H * 0.60, W, H * 0.40, 0, "rgba(0,0,0,.72)");
+    font(ctx, Math.round(W * 0.075), 900); ctx.fillStyle = palette.fg;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(g.label.slice(0, 32), W / 2, H * 0.72, W - 120);
+    font(ctx, Math.round(W * 0.035), 600); ctx.fillStyle = accent;
+    ctx.fillText((g.steps[0] || "").slice(0, 50), W / 2, H * 0.80, W - 140);
+  } else if (g.type === "card") {
+    rr(ctx, pad, H * 0.25, boxW, 430, 26, "rgba(255,255,255,.94)");
+    rr(ctx, pad + 26, H * 0.29, 190, 44, 22, accent);
+    font(ctx, 24, 800); ctx.fillStyle = palette.bg; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText("ШАГ", pad + 121, H * 0.29 + 22);
+    font(ctx, Math.round(W * 0.062), 900); ctx.fillStyle = palette.fg; ctx.textAlign = "left";
+    ctx.fillText(g.label.slice(0, 40), pad + 30, H * 0.42, boxW - 60);
+    font(ctx, Math.round(W * 0.038), 600); ctx.fillStyle = palette.muted;
+    (g.steps.length ? g.steps : [""]).slice(0, 3).forEach((s, i) =>
+      ctx.fillText(s.slice(0, 50), pad + 30, H * 0.52 + i * 58, boxW - 60));
+  } else if (g.type === "ui") {
+    rr(ctx, pad, H * 0.22, boxW, 520, 20, "rgba(12,14,20,.96)");
+    ctx.fillStyle = accent; ctx.fillRect(pad, H * 0.22, boxW, 8);
+    font(ctx, Math.round(W * 0.045), 800); ctx.fillStyle = palette.fg;
+    ctx.textAlign = "left"; ctx.textBaseline = "top";
+    ctx.fillText(g.label.slice(0, 42), pad + 28, H * 0.27, boxW - 56);
+    (g.steps.length ? g.steps : [""]).slice(0, 4).forEach((s, i) => {
+      const y = H * 0.36 + i * 76;
+      ctx.fillStyle = i ? palette.muted : accent;
+      ctx.fillRect(pad + 28, y, 8, 40);
+      font(ctx, Math.round(W * 0.033), 600); ctx.fillStyle = i ? palette.fg : accent;
+      ctx.fillText(s.slice(0, 52), pad + 52, y + 8, boxW - 80);
+    });
   } else {
     font(ctx, Math.round(W * 0.072), 900);
     ctx.fillStyle = accent; ctx.textAlign = "center"; ctx.textBaseline = "middle";
