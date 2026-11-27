@@ -153,7 +153,8 @@ export function compositionState(preset,opts={}){
       active.item.variant==='framed'?GRAPH[p]:{x:145,y:300,w:430,h:430,r:215};
   }
   rect=mixRect(rect,graphRect,graphic);
-  return {rect,intro:intro*(1-graphic),graphic,active,motion,motionStyle:opts.style,base,textEffect:opts.textEffect||'clean'};
+  return {rect,intro:intro*(1-graphic),graphic,active,motion,motionStyle:opts.style,base,
+    textEffect:opts.textEffect||'clean',kinetic:opts.kinetic||'headline',film:opts.film||'none'};
 }
 export function rectFor(p,opts={}){return compositionState(p,opts).rect}
 export function drawBackground(ctx,preset,clear=true){
@@ -217,7 +218,56 @@ function accentHeadline(ctx,text,x,y,w,h,size,preset){
   if(first){const m=textBox(ctx,first,{x,y,w,h:h*.62,size,min:32,preset,color:C[preset].fg,upper:false,maxLines:2,lineHeight:1.02});textBox(ctx,last,{x,y:y+m.height+3,w,h:h-m.height,size,min:32,preset,color:C[preset].accent,maxLines:1,lineHeight:1});}
   else textBox(ctx,last,{x,y,w,h,size,min:32,preset,color:C[preset].accent,maxLines:2,lineHeight:1.02});
 }
+// Deterministic hash: preview and MP4 must draw the same grain at the same frame.
+function hashInt(n){let x=n|0;x=Math.imul(x^(x>>>16),2246822507);x=Math.imul(x^(x>>>13),3266489909);return (x^(x>>>16))>>>0}
+function hashGlyph(i,seed){return 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[hashInt(i*97+seed)%26]}
+// Kinetic type from ghost-editor PLAYBOOK: hook, scramble and spring.
+// Each block depends only on outputT, so an exported frame matches the preview.
+function kineticTitle(ctx,title,preset,state,outputT){
+  const mode=state.kinetic,clean=String(title||'').trim();
+  if(!clean)return true;
+  const words=clean.split(/\s+/).slice(0,4),p=C[preset],t=Math.max(0,outputT-.15);
+  ctx.save();
+  if(mode==='hook'){
+    const w=words[0].toLocaleUpperCase('ru'),scale=1+.18*(1-ease(t/.35));
+    ctx.font=sans(190,900);ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.translate(FW/2,FH*.70);ctx.scale(scale,scale);ctx.globalAlpha=ease(t/.18);
+    ctx.fillStyle=p.accent;ctx.fillText(w,0,0,FW-80);
+  }else if(mode==='scramble'){
+    const text=words.join(' ').toLocaleUpperCase('ru');let out='';
+    for(let i=0;i<text.length;i++)out+=t/.9>hashInt(i*31+7)%100/100?text[i]:hashGlyph(i,Math.floor(t*12));
+    ctx.font=sans(92,900);ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.globalAlpha=ease(t/.2);ctx.fillStyle=p.accent;ctx.fillText(out,FW/2,FH*.62,FW-100);
+  }else if(mode==='spring'){
+    ctx.font=sans(96,900);ctx.textAlign='center';ctx.textBaseline='middle';
+    const total=words.reduce((s,w)=>s+ctx.measureText(w).width+26,-26);
+    let x=FW/2-Math.min(FW-120,total)/2;
+    words.forEach((w,i)=>{const age=t-i*.12,a=ease(age/.22),jump=age<.22?Math.sin(Math.PI*Math.min(1,age/.22))*.18:0;
+      ctx.save();ctx.globalAlpha=a;ctx.translate(0,-jump*100);ctx.fillStyle=i===0?p.accent:p.fg;
+      ctx.fillText(w,x,FH*.62);x+=ctx.measureText(w).width+26;ctx.restore();});
+  }else{ctx.restore();return false}
+  ctx.restore();return true;
+}
+function filmLook(ctx,state,outputT){
+  const mode=state.film;if(mode==='none')return;
+  const frame=Math.floor(Math.max(0,outputT)*30);let seed=frame+17;
+  ctx.save();
+  if(mode==='film'){
+    const g=ctx.createRadialGradient(FW/2,FH*.45,FH*.2,FW/2,FH*.45,FH*.85);
+    g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,'rgba(0,0,0,.30)');
+    ctx.fillStyle=g;ctx.fillRect(0,0,FW,FH);
+  }
+  ctx.fillStyle=mode==='film'?'rgba(255,244,220,.055)':'rgba(255,255,255,.07)';
+  const dots=mode==='film'?260:130;
+  for(let i=0;i<dots;i++){
+    seed=(Math.imul(seed,1664525)+1013904223)>>>0;const x=seed%FW;
+    seed=(Math.imul(seed,1664525)+1013904223)>>>0;const y=seed%FH;
+    ctx.fillRect(x,y,1.5,1.5);
+  }
+  ctx.restore();
+}
 function introTitle(ctx,preset,title,state,outputT,total){
+  if(state.motion&&state.kinetic&&state.kinetic!=='headline'&&outputT<3.83&&kineticTitle(ctx,title,preset,state,outputT))return;
   if(!title?.trim())return;
   // In the premium treatment the thought starts over the full-frame speaker,
   // then stays in place as the speaker moves into the smaller window.
@@ -529,10 +579,12 @@ export function drawOverlay(ctx,opts,clear=true){
   if(active?.item.layout==='scene'){
     drawScene(ctx,active,sourceTime,base,state.motion,images,state.motionStyle);
     if(cue)drawCaptions(ctx,cue,cueTime,preset,captionPosition,{...state,fullScene:true,intro:0,graphic:0});
+    filmLook(ctx,state,outputT);
     return;
   }
   chrome(ctx,base,state,outputT,outputDuration);introTitle(ctx,base,headline,state,outputT,outputDuration);
   drawGraphic(ctx,active,sourceTime,base,state,images);if(cue)drawCaptions(ctx,cue,cueTime,preset,captionPosition,{...state,heroTitle:!!String(headline||'').trim()&&outputT<3.83});
+  filmLook(ctx,state,outputT);
 }
 export function drawComposition(ctx,sample,sourceT,outputT,settings,styleAt,getCue){
   const {preset,style,start,end,manual,srt,outputDuration,mode,frameZoom,frameX,frameY}=settings;

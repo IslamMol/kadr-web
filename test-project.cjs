@@ -18,10 +18,13 @@ const {createProjectBlob,readProjectFile,normalizeProjectSettings}=require('./pr
   assert.throws(()=>createProjectBlob(settings,[...files,files[0]]),/медиа/);
   assert.throws(()=>createProjectBlob({...settings,graphics:new Array(13)},files),/графики/);
   assert.throws(()=>createProjectBlob(settings,[files[0],files[3],files[3]]),/изображения/);
-  const normalized=normalizeProjectSettings({...settings,preset:'ghost-cinematic',ghostStyle:'cinematic',textEffect:'serif'},3);
+  const normalized=normalizeProjectSettings({...settings,preset:'ghost-cinematic',ghostStyle:'cinematic',ghostRecipe:'cinematic',textEffect:'serif',kinetic:'spring',film:'film'},3);
   assert.equal(normalized.preset,'ghost-cinematic','ghost-стиль сохраняется в проекте');
   assert.equal(normalized.ghostStyle,'cinematic','стиль ghost-editor сохраняется');
+  assert.equal(normalized.ghostRecipe,'cinematic','приём сохраняется');
   assert.equal(normalized.textEffect,'serif','эффект текста сохраняется');
+  assert.equal(normalized.kinetic,'spring','кинетика сохраняется');
+  assert.equal(normalized.film,'film','плёночный эффект сохраняется');
   assert.equal(normalizeProjectSettings({...settings,preset:'unknown',textEffect:'unknown'},3).textEffect,'clean');
   console.log('OK project roundtrip, embedded media and damaged-file rejection');
 })().catch(e=>{console.error(e);process.exit(1)});

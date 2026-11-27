@@ -21,7 +21,7 @@ import { decodeVoice, outputToSource, voiceMapKey, makeVoiceMix, muxMixedAudio }
 import { LOCAL_VOICES, requestLocalVoice } from "./local-tts.js";
 import { createProjectBlob, readProjectFile, normalizeProjectSettings } from "./project.js";
 import { planTakes, takesToSilences } from "./takes.js";
-import { GHOST_STYLES, styleById, planGhostEdit, buildApprovalSheet, qaGhost, exampleCues } from "./ghost.js";
+import { GHOST_RECIPES, GHOST_STYLES, styleById, recipeById, planGhostEdit, buildApprovalSheet, qaGhost, exampleCues } from "./ghost.js";
 import { nearestBeatOutput } from "./beat.js";
 import { convertVideo, MAX_CONVERSION_BYTES } from "./converter.js";
 import {
@@ -294,7 +294,10 @@ function App() {
     [manual, setManual] = useState(""),
     [preset, setPreset] = useState("premium"),
     [ghostStyle, setGhostStyle] = useState("clean"),
+    [ghostRecipe, setGhostRecipe] = useState("clean"),
     [textEffect, setTextEffect] = useState("clean"),
+    [kinetic, setKinetic] = useState("headline"),
+    [film, setFilm] = useState("none"),
     [approved, setApproved] = useState(false),
     [captionPosition, setCaptionPosition] = useState("normal"),
     [headline, setHeadline] = useState(""),
@@ -352,10 +355,10 @@ function App() {
       window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true);
   latestRef.current = {source, ready, srt, graphics, headline, start, end, voice};
   const projectSettings = useMemo(() => ({
-    start,end,resolution,mode,frameZoom,frameX,frameY,style,manual,preset,captionPosition,ghostStyle,textEffect,
+    start,end,resolution,mode,frameZoom,frameX,frameY,style,manual,preset,captionPosition,ghostStyle,ghostRecipe,textEffect,kinetic,film,
     headline,autoHeadline:autoHeadlineRef.current || "",srt,graphics,silences,language,asrSource,
     voiceText,voicePreset,voiceOffset,voiceVolume,originalVolume,musicVolume,musicBpm,firstBeat,
-  }), [start,end,resolution,mode,frameZoom,frameX,frameY,style,manual,preset,captionPosition,ghostStyle,textEffect,
+  }), [start,end,resolution,mode,frameZoom,frameX,frameY,style,manual,preset,captionPosition,ghostStyle,ghostRecipe,textEffect,kinetic,film,
     headline,srt,graphics,silences,language,asrSource,voiceText,voicePreset,voiceOffset,
     voiceVolume,originalVolume,musicVolume,musicBpm,firstBeat]);
   const projectSignature = useMemo(() => JSON.stringify({
@@ -407,7 +410,7 @@ function App() {
   }, [projectSettings, ready]);
   useEffect(() => {
     try { const s = JSON.parse(localStorage.getItem("kadr-autosave-v2") || "null")?.settings; if (!s) return;
-      if (s.preset) setPreset(s.preset); if (s.ghostStyle) setGhostStyle(s.ghostStyle); if (s.textEffect) setTextEffect(s.textEffect); if (s.captionPosition) setCaptionPosition(s.captionPosition);
+      if (s.preset) setPreset(s.preset); if (s.ghostStyle) setGhostStyle(s.ghostStyle); if (s.ghostRecipe) setGhostRecipe(s.ghostRecipe); if (s.textEffect) setTextEffect(s.textEffect); if (s.kinetic) setKinetic(s.kinetic); if (s.film) setFilm(s.film); if (s.captionPosition) setCaptionPosition(s.captionPosition);
       if (s.style) setStyle(s.style); if (s.mode) setMode(s.mode); if (typeof s.headline === "string") setHeadline(s.headline);
       if (typeof s.manual === "string") setManual(s.manual); if (s.language) setLanguage(s.language);
       if (typeof s.voiceText === "string") setVoiceText(s.voiceText); if (s.voicePreset) setVoicePreset(s.voicePreset);
@@ -912,7 +915,8 @@ function App() {
       setResolution(s.resolution); setMode(s.mode);
       setFrameZoom(s.frameZoom); setFrameX(s.frameX); setFrameY(s.frameY);
       setStyle(s.style); setManual(s.manual); setPreset(s.preset);
-      setGhostStyle(s.ghostStyle || "clean"); setTextEffect(s.textEffect || "clean");
+      setGhostStyle(s.ghostStyle || "clean"); setGhostRecipe(s.ghostRecipe || "clean"); setTextEffect(s.textEffect || "clean");
+      setKinetic(s.kinetic || "headline"); setFilm(s.film || "none");
       setCaptionPosition(s.captionPosition); setHeadline(s.headline);
       autoHeadlineRef.current = s.autoHeadline || null;
       setSrt(s.srt); setGraphics(s.graphics); setSilences(s.silences);
@@ -1506,19 +1510,19 @@ function App() {
       if (token === quickToken.current) setQuickBusy(false);
     }
   }
-  async function applyGhostStyle(id) {
-    const s = styleById(id);
+  async function applyRecipe(id) {
+    const recipe = recipeById(id), s = styleById(recipe.style);
     if (!ready) await loadDemo();
     const cues = exampleCues();
     const suggested = planStoryboard({cues, start:0, end:6, maxScenes:1});
-    setGhostStyle(id);
-    setPreset(`ghost-${id}`);
-    setTextEffect(s.effect);
-    setHeadline(s.sample);
-    setSrt({name:`Пример · ${s.name}`,cues,origin:"example"});
-    setManual("");
-    setGraphics(suggested.scenes.map(scene => ({...newGraphic(scene.kind,scene.at),...scene,auto:true}))
-      .slice(0,1));
+    const at = suggested.scenes[0]?.at ?? 2.7;
+    const graphic = {...newGraphic(s.scene, at),auto:true};
+    if (s.scene === "number") { graphic.value = String(cues.length); graphic.label = "Фраз в примере"; }
+    else graphic.label = cues.map(c => c.text).join("\n");
+    setGhostRecipe(id); setGhostStyle(recipe.style); setPreset(`ghost-${recipe.style}`);
+    setTextEffect(s.effect); setKinetic(s.kinetic); setFilm(s.film); setHeadline(s.sample);
+    setSrt({name:`Пример · ${recipe.name}`,cues,origin:"example"});
+    setManual(""); setGraphics([graphic]);
     setStyle(window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "none" : "dynamic");
     setActiveTab("check");
     invalidate();
@@ -1593,7 +1597,7 @@ function App() {
       const ctx = canvas.getContext("2d", { alpha: false });
       ctx.scale(exportScale, exportScale);
       if (outputDuration < .2) throw new Error("После нарезки осталось слишком мало видео. Верни часть пауз.");
-      const settings = { style, start, end, manual, srt, images, graphics, outputDuration, preset, headline, captionPosition:effectiveCaptionPosition, mode, frameZoom, frameX, frameY };
+      const settings = { style, start, end, manual, srt, images, graphics, outputDuration, preset, headline, captionPosition:effectiveCaptionPosition, mode, frameZoom, frameX, frameY, textEffect, kinetic, film };
       const sourceScale = Math.min(1, 1920 / Math.max(sw, sh));
       const intermediateWidth = Math.max(2, Math.round(sw * sourceScale));
       const intermediateHeight = Math.max(2, Math.round(sh * sourceScale));
@@ -1692,9 +1696,10 @@ function App() {
     if (!ready || !overlayRef.current) return;
     drawOverlay(overlayRef.current.getContext("2d"), {preset, headline:inSelection ? headline : "",
       outputT:outputTime, outputDuration, sourceTime:position, cue, cueTime, style,
-      graphics:inSelection ? graphics : [], srt, images, captionPosition:effectiveCaptionPosition});
+      graphics:inSelection ? graphics : [], srt, images, captionPosition:effectiveCaptionPosition,
+      textEffect, kinetic, film});
   }, [ready, preset, headline, outputTime, outputDuration, position, cueTime, style,
-      graphics, srt, images, captionPosition, inSelection, manual, fontsReady]);
+      graphics, srt, images, captionPosition, inSelection, manual, fontsReady, textEffect, kinetic, film]);
   return (
     <div className="shell">
       <header className="topbar">
@@ -1946,22 +1951,11 @@ function App() {
                 <div className="sec-name"><LuCaptions size={15} /> Субтитры</div>
                 
               </div>
-              <p className="hint auto-intro">Распознай речь, затем поправь каждую фразу и её время. До 3 минут и 200 МБ.</p>
-              {voice && <label className="field-label">Что распознать
-                <select aria-label="Источник речи" className="form-select" value={asrSource}
-                  disabled={busy || asrBusy} onChange={e => setAsrSource(e.target.value)}>
-                  <option value="voice">Дорожку озвучки</option><option value="source">Исходный звук видео</option>
-                </select>
-              </label>}
-              <label className="field-label">Язык речи
-                <select aria-label="Язык речи" className="form-select" value={language} disabled={busy || asrBusy} onChange={e => setLanguage(e.target.value)}>
-                  <option value="russian">Русский</option><option value="english">Английский</option><option value="auto">Определить автоматически</option>
-                </select>
-              </label>
+              <p className="hint auto-intro">Одна кнопка снимет речь с видео. Дальше можно поправить каждую фразу и её время. До 3 минут и 200 МБ.</p>
               <button className="outline-action asr-action" onClick={asrBusy ? () => stopAsr() : transcribe} disabled={!ready || busy || voiceBusy || analysisBusy || draftBusy}>
                 <LuWandSparkles size={15} /> {asrBusy ? "Отменить распознавание" : srt ? "Распознать заново" : "Создать автосубтитры"}
               </button>
-              <p className="hint">Нужен интернет для загрузки модели и кода — около 250 МБ. Речь обрабатывается на устройстве, без отправки видео. Повторный запуск заменит текущие субтитры.</p>
+              <p className="hint">Модель скачивается один раз (~250 МБ). Речь обрабатывается на устройстве, видео никуда не отправляется.</p>
               {asrInfo && <p className={"auto-info"+(asrInfo.error?" error":"")} role="status">{asrInfo.text}</p>}
               {srt?.origin === "auto-voice" && srt.voiceMapKey !== currentVoiceMapKey &&
                 <p className="auto-info error">После создания субтитров изменились озвучка, обрезка или паузы. Проверь тайминги или распознай озвучку заново.</p>}
@@ -2000,23 +1994,37 @@ function App() {
                   <p className="hint">В SRT время исходного файла, до вырезания пауз. В MP4 субтитры следуют монтажу.</p>
                 </>
               ) : (
-                <label className="manual-caption"><span className="field-label">Или введи фразы вручную, каждую с новой строки</span>
+                <p className="hint">Слов пока нет. Нажми кнопку выше или открой «Другие способы» ниже.</p>
+              )}
+              <details className="advanced-box">
+                <summary>Другие способы добавить слова и точная настройка</summary>
+                {voice && <label className="field-label">Что распознать
+                  <select aria-label="Источник речи" className="form-select" value={asrSource}
+                    disabled={busy || asrBusy} onChange={e => setAsrSource(e.target.value)}>
+                    <option value="voice">Дорожку озвучки</option><option value="source">Исходный звук видео</option>
+                  </select>
+                </label>}
+                <label className="field-label">Язык речи
+                  <select aria-label="Язык речи" className="form-select" value={language} disabled={busy || asrBusy} onChange={e => setLanguage(e.target.value)}>
+                    <option value="russian">Русский</option><option value="english">Английский</option><option value="auto">Определить автоматически</option>
+                  </select>
+                </label>
+                {!srt && <label className="manual-caption"><span className="field-label">Ввести фразы вручную, каждую с новой строки</span>
                   <textarea className="text-input subtitles-input" maxLength={1200} placeholder={"Например:\nЭто твоя идея\nДавай её оживим"}
                     value={manual} disabled={busy} onChange={e => {setManual(e.target.value); invalidate();}} />
-                  <span className="hint">Вручную фразы и слова распределяются равномерно, не по речи.</span>
-                </label>
-              )}
-              <input ref={srtInput} type="file" accept=".srt,text/plain" aria-label="Загрузить SRT" hidden onChange={e => importSrt(e.target.files?.[0])} />
-              <button className="demo-link compact" disabled={busy || asrBusy} onClick={() => srtInput.current?.click()}>{srt ? "Заменить файлом SRT" : "Или загрузить SRT с таймингом"}</button>
-              <span className="field-label spaced">Расположение субтитров</span>
-              <div className="mode mode-three" role="group" aria-label="Расположение субтитров">
-                {[["high","Выше"],["normal","Обычно"],["low","Ниже"]].map(([key,label]) =>
-                  <button key={key} type="button" disabled={busy} aria-pressed={captionPosition === key} onClick={() => {setCaptionPosition(key); invalidate();}}>{label}</button>)}
-              </div>
-              <p className="hint">Выбирай позицию так, чтобы текст не закрывал лицо и кнопки приложения.</p>
-              <label className="voice-level"><span>Положение лица по вертикали <b>{faceY}%</b></span>
-                <input type="range" aria-label="Положение лица по вертикали" min="5" max="90" step="1" value={faceY} disabled={busy} onChange={e => {setFaceY(Number(e.target.value)); invalidate();}} /></label>
-              {captionHitsFace && <p className="auto-info">Субтитры пересекаются с зоной лица — в предпросмотре и экспорте они автоматически сдвинуты в безопасную зону ({effectiveCaptionPosition === "low" ? "ниже" : "выше"}).</p>}
+                  <span className="hint">Вручную фразы распределяются равномерно, не по речи.</span>
+                </label>}
+                <input ref={srtInput} type="file" accept=".srt,text/plain" aria-label="Загрузить SRT" hidden onChange={e => importSrt(e.target.files?.[0])} />
+                <button className="demo-link compact" disabled={busy || asrBusy} onClick={() => srtInput.current?.click()}>{srt ? "Заменить файлом SRT" : "Загрузить SRT с таймингом"}</button>
+                <span className="field-label spaced">Расположение субтитров</span>
+                <div className="mode mode-three" role="group" aria-label="Расположение субтитров">
+                  {[["high","Выше"],["normal","Обычно"],["low","Ниже"]].map(([key,label]) =>
+                    <button key={key} type="button" disabled={busy} aria-pressed={captionPosition === key} onClick={() => {setCaptionPosition(key); invalidate();}}>{label}</button>)}
+                </div>
+                <label className="voice-level"><span>Положение лица по вертикали <b>{faceY}%</b></span>
+                  <input type="range" aria-label="Положение лица по вертикали" min="5" max="90" step="1" value={faceY} disabled={busy} onChange={e => {setFaceY(Number(e.target.value)); invalidate();}} /></label>
+                {captionHitsFace && <p className="auto-info">Субтитры пересекаются с зоной лица — в предпросмотре и экспорте они автоматически сдвинуты в безопасную зону ({effectiveCaptionPosition === "low" ? "ниже" : "выше"}).</p>}
+              </details>
             </div>
             <div className="section takes-section" hidden={activeTab !== "check"}>
               <div className="sec-title"><div className="sec-name"><LuScissors size={15} /> Предложения и дубли</div></div>
@@ -2025,46 +2033,44 @@ function App() {
                 {takesPlan.sentences.map((s, i) => { const key = String(s.text || "").trim().toLowerCase(); const alt = takesPlan.rejected?.find(r => String(r.text || "").trim().toLowerCase() === key); const isCut = silences.some(c => c.enabled && c.from < s.end && c.to > s.start); return <div className="cut-row take-row" key={i}><span className="take-text">{s.text} <small>дубль {preciseTime(s.start)}</small></span><button type="button" className="text-action" disabled={busy} onClick={() => toggleSentence(s)}>{isCut ? "Вернуть предложение" : "Вырезать предложение"}</button>{alt && <button type="button" className="text-action" disabled={busy} onClick={() => swapTake(s)}>Заменить дубль ({preciseTime(alt.start)})</button>}</div>; })}
               </div>}
             </div>
-            <div className="section template-section" hidden={activeTab !== "check"}>
+            <div className="section recipe-section" hidden={activeTab !== "check"}>
               <div className="sec-title">
-                <div className="sec-name"><LuSparkles size={15} /> Шаблоны и эффекты</div>
+                <div className="sec-name"><LuSparkles size={15} /> Готовый вид</div>
               </div>
-              <p className="hint">Стили перенесены из ghost-editor как системы: шрифт, акцент, подача слов и сцены. Нажми карточку — откроется пример на встроенном видео.</p>
-              <div className="template-grid" role="group" aria-label="Стили ghost-editor">
-                {GHOST_STYLES.map(s => (
-                  <button key={s.id} type="button" className={"template-card" + (ghostStyle === s.id ? " active" : "")}
-                    aria-pressed={ghostStyle === s.id} disabled={busy}
-                    onClick={() => applyGhostStyle(s.id)}>
-                    <span className="template-sample" style={{"--fx-accent":s.accent}} data-effect={s.effect}>
-                      <b>{s.sample}</b><i />
+              <p className="hint">Один клик меняет всё сразу: как появляются слова, как движется кадр, какая графика и какое зерно. Это не названия для галочки.</p>
+              <div className="recipe-grid" role="group" aria-label="Готовые приёмы монтажа">
+                {GHOST_RECIPES.map(r => { const s = styleById(r.style); return (
+                  <button key={r.id} type="button" className={"recipe-card" + (ghostRecipe === r.id ? " active" : "")}
+                    aria-pressed={ghostRecipe === r.id} disabled={busy} onClick={() => applyRecipe(r.id)}>
+                    <span className="recipe-preview" style={{"--fx-accent":s.accent}} data-kinetic={s.kinetic} data-film={s.film}>
+                      <b>{r.label}</b><i />
                     </span>
-                    <strong>{s.name}</strong><small>{s.note}</small>
+                    <strong>{r.name}</strong>
+                    <small>{r.what}</small>
+                    <span className="recipe-parts">{r.caption} · {r.graphic} · {r.motion}</span>
                   </button>
-                ))}
+                )})}
               </div>
-              <p className="hint">Слова берутся только из твоих субтитров. Никаких выдуманных фраз, чисел и заявлений.</p>
-            </div>
-            <div className="section preset-section" hidden={activeTab !== "check"}>
-              <div className="sec-title">
-                <div className="sec-name"><LuSparkles size={15} /> Оформление</div>
-                
-              </div>
-              <span className="field-label">Выбери стиль</span>
-              <div className="preset-grid" role="group" aria-label="Стиль оформления">
-                {Object.entries(PRESETS).map(([key, value]) => (
-                  <button key={key} type="button" className="preset-card" aria-label={`${value.name} — стиль оформления`}
-                    aria-pressed={preset === key} disabled={busy} onClick={() => { setPreset(key); invalidate(); }}>
-                    <span className={`preset-sample preset-${key}`} aria-hidden="true"><i /><span className="sample-window" /><b>Твой <em>текст</em></b><span className="sample-rule" /></span>
-                    <span className="preset-name">{value.name}</span><span className="preset-note">{value.note}</span>
-                  </button>
-                ))}
-              </div>
-              <label className="headline-label">
-                <span className="field-label spaced">Заголовок в начале (необязательно)</span>
-                <input className="headline-input" type="text" maxLength={60} value={headline} disabled={busy}
-                  placeholder="Например: Важная идея" onChange={(e) => { autoHeadlineRef.current=null;setHeadline(e.target.value); invalidate(); }} />
-              </label>
-              <p className="hint">В начале ролика заголовок собирается в отдельную сцену. В тёмном премиуме слова мягко появляются по очереди, если включено движение. Затем кадр плавно меняется.</p>
+              <p className="hint">Нажми карточку — откроется пример на встроенном видео. Слова и сцены берутся только из твоих субтитров.</p>
+              <details className="advanced-box">
+                <summary>Палитра и заголовок</summary>
+                <span className="field-label">Палитра</span>
+                <div className="preset-grid" role="group" aria-label="Стиль оформления">
+                  {Object.entries(PRESETS).map(([key, value]) => (
+                    <button key={key} type="button" className="preset-card" aria-label={`${value.name} — стиль оформления`}
+                      aria-pressed={preset === key} disabled={busy} onClick={() => { setPreset(key); invalidate(); }}>
+                      <span className={`preset-sample preset-${key}`} aria-hidden="true"><i /><span className="sample-window" /><b>Твой <em>текст</em></b><span className="sample-rule" /></span>
+                      <span className="preset-name">{value.name}</span><span className="preset-note">{value.note}</span>
+                    </button>
+                  ))}
+                </div>
+                <label className="headline-label">
+                  <span className="field-label spaced">Заголовок в начале (необязательно)</span>
+                  <input className="headline-input" type="text" maxLength={60} value={headline} disabled={busy}
+                    placeholder="Например: Важная идея" onChange={(e) => { autoHeadlineRef.current=null;setHeadline(e.target.value); invalidate(); }} />
+                </label>
+                <p className="hint">Заголовок собирается в отдельную сцену в начале ролика. Тип движения зависит от выбранного приёма выше.</p>
+              </details>
             </div>
             <div className="section review-section" aria-label="План и проверка" hidden={activeTab !== "export"}>
               <div className="sec-title">

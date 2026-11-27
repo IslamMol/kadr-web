@@ -1,12 +1,20 @@
 const assert=require("node:assert/strict");
 (async () => {
-  const {GHOST_STYLES,planGhostEdit,buildApprovalSheet,qaGhost,exampleCues}=require("./ghost-bundle.cjs");
+  const {GHOST_STYLES,GHOST_RECIPES,recipeById,planGhostEdit,buildApprovalSheet,qaGhost,exampleCues}=require("./ghost-bundle.cjs");
   const {compositionState}=require("./motion-test-bundle.cjs");
   assert.equal(GHOST_STYLES.length,7,"семь стилей ghost-editor");
+  assert.equal(GHOST_RECIPES.length,4,"четыре видимых приёма");
   for(const style of GHOST_STYLES){
-    const state=compositionState(`ghost-${style.id}`,{style:"dynamic",textEffect:style.effect,outputT:0});
+    const state=compositionState(`ghost-${style.id}`,{style:"dynamic",textEffect:style.effect,kinetic:style.kinetic,film:style.film,outputT:0});
     assert.equal(state.textEffect,style.effect,`эффект ${style.id} дошёл до движка`);
+    assert.equal(state.kinetic,style.kinetic,`кинетика ${style.id} дошла до движка`);
+    assert.equal(state.film,style.film,`плёнка ${style.id} дошла до движка`);
     assert.ok(state.rect.w>0&&state.rect.h>0,`геометрия ${style.id}`);
+  }
+  for(const recipe of GHOST_RECIPES){
+    const style=GHOST_STYLES.find(s=>s.id===recipe.style);
+    assert.ok(style,`приём ${recipe.id} ссылается на реальный стиль`);
+    assert.equal(recipeById(recipe.id).name,recipe.name);
   }
   const cues=exampleCues();
   const plan=planGhostEdit(cues,{start:0,end:6});

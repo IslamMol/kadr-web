@@ -20,23 +20,46 @@ export const GHOST_RULES = Object.freeze({
 // Каждый стиль — система: шрифт, акцент, субтитры, движение и сцены.
 // preset/effect — реальные движки Кадра, а не названия для галочки.
 export const GHOST_STYLES = [
-  {id:"clean", name:"Чистый", preset:"premium", effect:"clean", accent:"#ffd23f", capSize:64,
+  {id:"clean", name:"Чистый", preset:"premium", effect:"clean", scene:"quote", motion:"soft", kinetic:"headline", film:"none", accent:"#ffd23f", capSize:64,
    font:"Manrope", note:"Крупные слова, один акцент, без музыки", sample:"Чистая речь, один акцент"},
-  {id:"cinematic", name:"Кино", preset:"premium", effect:"serif", accent:"#e7c27a", capSize:56,
+  {id:"cinematic", name:"Кино", preset:"premium", effect:"serif", scene:"quote", motion:"soft", kinetic:"headline", film:"film", accent:"#e7c27a", capSize:56,
    font:"Playfair", note:"Засечки, мягкий свет, редкие сцены", sample:"Крупная мысль, крупная буква"},
-  {id:"editorial", name:"Редакционный", preset:"red", effect:"editorial", accent:"#d13f34", capSize:58,
+  {id:"editorial", name:"Редакционный", preset:"red", effect:"editorial", scene:"diagram", motion:"soft", kinetic:"scramble", film:"none", accent:"#d13f34", capSize:58,
    font:"Manrope", note:"Нижний регистр, подсветка слов, карточки", sample:"Слово за словом, без шума"},
-  {id:"kinetic", name:"Кинетический", preset:"red", effect:"pop", accent:"#ff5a1f", capSize:60,
+  {id:"kinetic", name:"Кинетический", preset:"red", effect:"pop", scene:"number", motion:"dynamic", kinetic:"spring", film:"grain", accent:"#ff5a1f", capSize:60,
    font:"Manrope", note:"Крупное слово, прыжок на ударении", sample:"Одно слово — один кадр"},
-  {id:"launch", name:"Запуск", preset:"tech", effect:"type", accent:"#7c5cff", capSize:58,
+  {id:"launch", name:"Запуск", preset:"tech", effect:"type", scene:"diagram", motion:"dynamic", kinetic:"scramble", film:"none", accent:"#7c5cff", capSize:58,
    font:"Manrope", note:"Тёмный интерфейс, моно-метки, глитч", sample:"Запуск за три шага"},
-  {id:"meme", name:"Мем", preset:"light", effect:"outline", accent:"#ffd166", capSize:60,
+  {id:"meme", name:"Мем", preset:"light", effect:"outline", scene:"quote", motion:"dynamic", kinetic:"hook", film:"none", accent:"#ffd166", capSize:60,
    font:"Manrope", note:"Обводка и крупная реакция рядом с лицом", sample:"Реакция крупным планом"},
-  {id:"pop", name:"Журнал", preset:"light", effect:"upper", accent:"#ff2e88", capSize:56,
+  {id:"pop", name:"Журнал", preset:"light", effect:"upper", scene:"number", motion:"dynamic", kinetic:"hook", film:"none", accent:"#ff2e88", capSize:56,
    font:"Manrope", note:"ЗАГЛАВНЫЕ, цветной блок, журнальная сетка", sample:"БОЛЬШОЕ СЛОВО В КАДРЕ"},
 ];
 
+// Четыре видимых приёма вместо семи абстрактных названий. Каждый честно
+// переключает то, что реально рисует Кадр: субтитры, заголовок, сцену,
+// движение и плёночныйLOOK. Всё из building blocks PLAYBOOK.md.
+export const GHOST_RECIPES = [
+  {id:"clean", style:"clean", name:"Слова", label:"чистые субтитры",
+   what:"Крупные слова по одному, спокойный вход, цитата рядом с лицом",
+   caption:"Слова появляются по очереди", graphic:"Цитата из твоих же фраз",
+   motion:"Мягкое движение", look:"Без зерна"},
+  {id:"kinetic", style:"kinetic", name:"Удар", label:"ударение и счёт",
+   what:"Слово прыгает на ударении, карточка со счётом, зёрна плёнки",
+   caption:"Прыжок и обводка", graphic:"Карточка-счёт по фразе",
+   motion:"Динамика", look:"Лёгкое зерно"},
+  {id:"editorial", style:"editorial", name:"Схема", label:"объяснение",
+   what:"Слова нижним регистром, схема из твоих фраз, подсветка",
+   caption:"Нижний регистр и подсветка", graphic:"Схема из слов",
+   motion:"Мягкое движение", look:"Без зерна"},
+  {id:"cinematic", style:"cinematic", name:"Плёнка", label:"история",
+   what:"Засечки, виньетка и зерно, редкая цитата",
+   caption:"Засечки с мягким появлением", graphic:"Тихая цитата",
+   motion:"Мягкое движение", look:"Зерно и виньетка"},
+];
+
 export const styleById = (id) => GHOST_STYLES.find((s) => s.id === id) || GHOST_STYLES[0];
+export const recipeById = (id) => GHOST_RECIPES.find((r) => r.id === id) || GHOST_RECIPES[0];
 
 // Дубли и паузы: те же правила, что в takedown ghost-editor, но на JS.
 export function planGhostEdit(cues, opts = {}) {

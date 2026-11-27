@@ -249,23 +249,35 @@ button,input,select,textarea{font-family:var(--font)}
 .preset-sample,.preset-sample.preset-premium,.preset-sample.preset-tech,.preset-sample.preset-red,.preset-sample.preset-light{background:#222327}
 .preset-sample:before,.preset-sample.preset-premium:before,.preset-sample.preset-tech:before{display:none}
 
-/* Ghost-editor styles: compact cards with a real text-effect sample. */
-.template-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
-.template-card{min-width:0;padding:8px;border:1px solid var(--edge);border-radius:12px;background:var(--surface2);color:var(--text);text-align:left;display:grid;gap:3px;transition:border-color .15s ease,background .15s ease}
-.template-card:hover:not(:disabled){border-color:#aab9f066;background:#2a2c31}
-.template-card.active{border-color:#b9c6ff;background:#2d3040}
-.template-card strong{font-size:12px;font-weight:700}
-.template-card small{font-size:10px;line-height:1.35;color:var(--muted)}
-.template-sample{height:52px;width:100%;position:relative;display:flex;align-items:flex-end;padding:7px;overflow:hidden;border-radius:8px;background:#17181c}
-.template-sample b{position:relative;z-index:1;max-width:100%;font-size:11px;line-height:1.15;color:#f5f5f7;overflow-wrap:anywhere}
-.template-sample i{position:absolute;left:8px;right:8px;top:7px;height:2px;background:var(--fx-accent)}
-.template-sample[data-effect=serif] b{font-family:"Kadr Playfair",Georgia,serif;font-style:italic;font-size:12px;color:var(--fx-accent)}
-.template-sample[data-effect=editorial] b{text-transform:lowercase;color:var(--fx-accent)}
-.template-sample[data-effect=pop] b{font-size:14px;font-weight:900;color:var(--fx-accent)}
-.template-sample[data-effect=type] b{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--fx-accent)}
-.template-sample[data-effect=outline] b{color:transparent;-webkit-text-stroke:1px var(--fx-accent)}
-.template-sample[data-effect=upper] b{text-transform:uppercase;font-weight:900;color:var(--fx-accent)}
-@media(max-width:700px){.template-sample{height:58px}.template-card strong{font-size:11px}}
+/* Advanced settings are hidden until needed: step 2 stays readable. */
+.advanced-box{margin-top:12px;border:1px solid var(--edge);border-radius:12px;background:var(--surface2)}
+.advanced-box>summary{cursor:pointer;padding:10px 12px;font-size:12px;font-weight:700;color:var(--muted);list-style:none}
+.advanced-box>summary::-webkit-details-marker{display:none}
+.advanced-box>summary:after{content:' +';float:right}
+.advanced-box[open]>summary:after{content:' −'}
+.advanced-box>*:not(summary){margin-left:12px;margin-right:12px}
+
+/* Four visible recipes: each preview animates the motion it actually applies. */
+.recipe-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}
+.recipe-card{min-width:0;padding:9px;border:1px solid var(--edge);border-radius:13px;background:var(--surface2);color:var(--text);text-align:left;display:grid;gap:4px;transition:border-color .15s ease,background .15s ease}
+.recipe-card:hover:not(:disabled){border-color:#aab9f066;background:#2a2c31}
+.recipe-card.active{border-color:#b9c6ff;background:#2d3040}
+.recipe-card strong{font-size:13px;font-weight:700}
+.recipe-card small{font-size:10px;line-height:1.4;color:var(--muted)}
+.recipe-parts{font-size:9px;line-height:1.3;color:#9299a6}
+.recipe-preview{height:72px;width:100%;position:relative;display:flex;align-items:flex-end;padding:9px;overflow:hidden;border-radius:9px;background:linear-gradient(140deg,#1a1b20,#121317)}
+.recipe-preview b{position:relative;z-index:2;max-width:100%;font-size:13px;line-height:1.1;color:#f4f4f7;overflow-wrap:anywhere}
+.recipe-preview i{position:absolute;left:9px;right:9px;top:9px;height:2px;background:var(--fx-accent)}
+.recipe-preview[data-film=film]:before,.recipe-preview[data-film=grain]:before{content:'';position:absolute;inset:0;z-index:1;background:radial-gradient(circle at 50% 40%,transparent 35%,rgba(0,0,0,.35) 100%);opacity:.7}
+.recipe-preview[data-kinetic=spring] b{color:var(--fx-accent);animation:recipe-spring 1.9s ease-in-out infinite}
+.recipe-preview[data-kinetic=scramble] b{color:var(--fx-accent);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;animation:recipe-scramble 1.9s steps(7,end) infinite}
+.recipe-preview[data-kinetic=hook] b{color:var(--fx-accent);font-size:19px;font-weight:900;animation:recipe-hook 1.9s ease-out infinite}
+.recipe-preview[data-kinetic=headline] b{color:var(--fx-accent);font-family:"Kadr Playfair",Georgia,serif;font-style:italic}
+@keyframes recipe-spring{0%,100%{transform:translateY(0)}35%{transform:translateY(-9px)}60%{transform:translateY(3px)}}
+@keyframes recipe-scramble{0%,100%{opacity:.45;letter-spacing:.12em}40%{opacity:1;letter-spacing:0}}
+@keyframes recipe-hook{0%{transform:translateY(26px) scale(1.2);opacity:0}30%{transform:translateY(0) scale(1);opacity:1}100%{opacity:1}}
+@media(prefers-reduced-motion:reduce){.recipe-preview b{animation:none!important}}
+@media(max-width:700px){.recipe-grid{grid-template-columns:1fr 1fr}.recipe-preview{height:64px}}
 .quick-draft{background:transparent;border-color:#ffffff14}
 .stage-body{background:#1b1c20}
 .auto-pill{display:none}
