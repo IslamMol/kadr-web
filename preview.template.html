@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#08090c">
+  <title>Кадр 3.0 — превью и инструкция</title>
+  <meta name="description" content="Кадр 3.0: локальная студия монтажа разговорных видео с субтитрами по словам, моушен-графикой и 26 шаблонами.">
+  <meta property="og:title" content="Кадр 3.0 — сырое видео → готовый рилс">
+  <meta property="og:description" content="Субтитры по словам, моушен, графика и 26 шаблонов. Всё локально в браузере.">
+  <meta property="og:image" content="./preview-cover.png">
+  <link rel="icon" href="./icons/icon-192.png" sizes="192x192">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <style>__FONT__ __CSS__</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <span class="brandmark">К</span><b>Кадр</b><span class="badge">Студия 3.0</span>
+      <span class="spacer"></span>
+      <a class="badge" href="./studio3.html">Открыть студию</a>
+      <a class="badge" href="https://github.com/IslamMol/kadr-web/releases/latest/download/kadr-desktop.zip">Windows</a>
+    </header>
+
+    <section class="hero">
+      <div>
+        <span class="kicker">Локальный монтаж без серверов</span>
+        <h1>Сырое видео →<br>готовый рилс</h1>
+        <p>Загрузи видео, распознай речь, выбери шаблон. Субтитры по словам, движения, графика и стиль применяются одним кликом. Никаких ключей, аккаунтов и загрузки видео в облако.</p>
+        <div class="actions">
+          <a class="btn primary" href="./studio3.html"><span data-icon="sparkles"></span> Открыть студию</a>
+          <a class="btn" href="https://github.com/IslamMol/kadr-web">GitHub</a>
+        </div>
+      </div>
+      <img class="cover" src="./preview-cover.png" alt="Обложка Кадра 3.0">
+    </section>
+
+    <div class="steps">
+      <div class="step"><b>01 / ВИДЕО</b><strong>Загрузи</strong><span>Выбери файл, задай начало и конец. Паузы найдутся и уберутся автоматически.</span></div>
+      <div class="step"><b>02 / СУБТИТРЫ</b><strong>Распознай</strong><span>Слова с таймкодами. Любую фразу можно поправить, разделить или слить.</span></div>
+      <div class="step"><b>03 / ВИД</b><strong>Выбери стиль</strong><span>26 шаблонов с живыми превью. Сборка MP4 — прямо в браузере.</span></div>
+    </div>
+
+    <section>
+      <div class="section-head">
+        <div><h2>Мэшап шаблонов</h2><p>Один дубль — шесть разных систем монтажа. Кадр меняется каждые 2.4 секунды.</p></div>
+        <span class="badge">живой предпоказ</span>
+      </div>
+      <div class="mashup">
+        <div class="stage"><canvas id="mashup" width="540" height="960"></canvas></div>
+        <div class="now">
+          <span class="kicker">Сейчас в кадре</span>
+          <span class="tpl" id="now-title">Чистый</span>
+          <span class="what" id="now-what">Загрузка…</span>
+          <span class="meta" id="now-meta"></span>
+          <div class="progress"><span></span></div>
+          <div class="grid">
+            <div class="mini"><b>Субтитры</b><span>по словам, с подсветкой</span></div>
+            <div class="mini"><b>Графика</b><span>карточки, схемы, чипы</span></div>
+            <div class="mini"><b>Моушен</b><span>событие на слове</span></div>
+            <div class="mini"><b>LOOK</b><span>26 систем</span></div>
+            <div class="mini"><b>Звук</b><span>исходника</span></div>
+            <div class="mini"><b>Экспорт</b><span>1080×1920 MP4</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>Кадр 3.0 · исходники и лицензии на GitHub · всё считается на твоём устройстве.</footer>
+  </div>
+  <script>__JS__</script>
+</body>
+</html>
