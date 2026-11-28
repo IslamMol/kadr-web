@@ -48,11 +48,11 @@ header .sub{font-size:12px;color:var(--muted);letter-spacing:0;font-weight:500}
 .quick-start strong{font-size:12px;color:var(--text);margin-right:2px}
 .quick-start span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
 .quick-start b{display:grid;place-items:center;width:21px;height:21px;border-radius:7px;background:rgba(185,198,255,.18);color:#dfe6ff;font-size:10px;font-style:normal}
-.editor-tabs{position:sticky;top:70px;z-index:10;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding:4px;border:1px solid var(--line);border-radius:12px;background:rgba(12,14,19,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.editor-tabs{position:sticky;top:64px;z-index:10;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding:4px;border:1px solid var(--line);border-radius:12px;background:rgba(10,12,17,.96);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 8px 20px rgba(0,0,0,.25)}
 .editor-tabs button{min-width:0;min-height:36px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;box-shadow:none}
 .editor-tabs button:hover{transform:none;background:rgba(255,255,255,.05);color:var(--text)}
 .editor-tabs button[aria-pressed=true]{background:linear-gradient(145deg,#3b4152,#303543);color:#f5f7fb;box-shadow:0 2px 8px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.09)}
-.section-block{display:grid;gap:11px;padding:14px 12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.018)}
+.section-block{display:grid;gap:11px;padding:14px 12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.018);scroll-margin-top:126px}
 .sec-title{display:flex;align-items:center;gap:9px}
 .sec-title strong{font-size:13px;font-weight:750;letter-spacing:-.012em}
 .step-num{display:grid;place-items:center;width:22px;height:22px;border-radius:8px;background:rgba(185,198,255,.16);color:#dfe6ff;font-size:11px;font-weight:800}
@@ -117,7 +117,8 @@ video{display:none}
 .card small{font-size:10px;color:var(--muted);line-height:1.45}
 .card small em{display:block;margin-top:4px;font-style:normal;color:var(--faint);font-size:9px}
 .tpl-preview{width:100%;aspect-ratio:9/16;border-radius:11px;border:1px solid rgba(255,255,255,.09);background:#08090c;display:block}
-.tpl-card{padding:9px}
+.tpl-card{padding:9px;grid-template-rows:auto auto 1fr auto;align-content:start;min-height:0}
+.card small{overflow-wrap:anywhere}
 .tpl-meta{font-size:9px;color:var(--faint);line-height:1.3;font-variant-numeric:tabular-nums}
 .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:2px}
 .filter{padding:5px 10px;border-radius:999px;font-size:11px;font-weight:700;color:var(--muted);background:rgba(255,255,255,.03)}

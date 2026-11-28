@@ -73,7 +73,7 @@ function drawCaption(ctx, cue, edl, state, palette) {
   if (!state.reducedMotion && state.motion?.type === "word-slam") {
     motionScale = 1 + 0.22 * (1 - ease((t - state.motion.at) / state.motion.duration));
   }
-  const size = Math.max(28, Math.min(84, Math.round(W * 0.062)));
+  const size = Math.max(22, Math.min(84, Math.round(W * 0.062)));
   font(ctx, size, template === "outline" ? 900 : 800);
   const rows = lines(ctx, cue.words, W - 150, template);
   const lineHeight = size * 1.16;

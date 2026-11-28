@@ -520,12 +520,12 @@ function renderTemplatePreviews() {
     const canvas = document.querySelector(`[data-tpl-preview="${tpl.id}"]`);
     if (!canvas) continue;
     const words = tpl.sample.split(/\s+/).filter(Boolean);
-    const step = 0.85 / Math.max(1, words.length);
+    const step = 1.2 / Math.max(1, words.length);
     const cues = [
-      { id: "a", start: 0.15, end: 1, text: tpl.sample, template: tpl.caption,
-        words: words.map((text, i) => ({ text, start: 0.15 + step * i, end: 0.15 + step * (i + 1) })) },
-      { id: "b", start: 1.15, end: 2.2, text: "39% идей в голову", template: tpl.caption,
-        words: [{ text: "39%", start: 1.15, end: 1.45 }, { text: "идей", start: 1.45, end: 1.8 }, { text: "в голову.", start: 1.8, end: 2.2 }] },
+      { id: "a", start: 0.05, end: 1.25, text: tpl.sample, template: tpl.caption,
+        words: words.map((text, i) => ({ text, start: 0.05 + step * i, end: 0.05 + step * (i + 1) })) },
+      { id: "b", start: 1.3, end: 2.55, text: "39% идей в голову", template: tpl.caption,
+        words: [{ text: "39%", start: 1.3, end: 1.7 }, { text: "идей", start: 1.7, end: 2.1 }, { text: "в голову.", start: 2.1, end: 2.55 }] },
     ];
     const edl = previewEdl(tpl, cues);
     registerPreview(tpl.id, canvas, edl, Math.min(1.7, (edl.graphics[0]?.at || 0.5) + 0.12));
