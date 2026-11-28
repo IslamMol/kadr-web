@@ -1,6 +1,7 @@
 from pathlib import Path
 from base64 import b64encode
 import hashlib
+import os
 import shutil
 import subprocess
 import sys
@@ -99,11 +100,12 @@ with zipfile.ZipFile(source_dir/'kadr-source.zip','w',zipfile.ZIP_DEFLATED,compr
   f=p/name
   if not f.is_file():raise SystemExit('Нет файла исходников: '+name)
   z.write(f,arcname='Кадр-исходники/'+name)
-try:
- subprocess.run([sys.executable,str(p/'desktop/build-desktop.py')],check=False)
- dz=p/'desktop/kadr-desktop.zip'
- if dz.is_file():
-  (site/'desktop').mkdir(exist_ok=True);shutil.copyfile(dz,site/'desktop/kadr-desktop.zip')
-except Exception:
- pass
+if sys.platform.startswith('win') and os.environ.get('KADR_SKIP_DESKTOP') != '1':
+ try:
+  subprocess.run([sys.executable,str(p/'desktop/build-desktop.py')],check=False)
+  dz=p/'desktop/kadr-desktop.zip'
+  if dz.is_file():
+   (site/'desktop').mkdir(exist_ok=True);shutil.copyfile(dz,site/'desktop/kadr-desktop.zip')
+ except Exception:
+  pass
 print('HTML generated, bytes:',len(html.encode()),'PWA cache:',version,'converter:',len(wasm))

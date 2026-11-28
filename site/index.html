@@ -3466,13 +3466,16 @@ self.onmessage = async ({data}) => {
     const {pipeline,env} = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2');
     env.allowLocalModels = false;
     env.backends.onnx.wasm.numThreads = 1;
-    if (!recognizer) recognizer = await pipeline('automatic-speech-recognition', 'onnx-community/whisper-small_timestamped', {
-      revision:'65caa70f294b46e1c33ff820aae6b16d048ab818', dtype:'q8', device:'wasm', progress_callback: progress => {
+    const fast = data.model === 'tiny';
+    const model = fast ? 'onnx-community/whisper-tiny_timestamped' : 'onnx-community/whisper-small_timestamped';
+    const revision = fast ? 'main' : '65caa70f294b46e1c33ff820aae6b16d048ab818';
+    if (!recognizer || !recognizer.modelId?.includes(model)) recognizer = await pipeline('automatic-speech-recognition', model, {
+      revision, dtype:'q8', device:'wasm', progress_callback: progress => {
         if(progress.status === 'done') self.postMessage({type:'file', file:progress.file});
       }
     });
     self.postMessage({type:'recognizing'});
-    const options = {return_timestamps:'word', chunk_length_s:30, stride_length_s:5, task:'transcribe'};
+    const options = {return_timestamps:'word', chunk_length_s:fast?20:30, stride_length_s:fast?4:5, task:'transcribe'};
     if(data.language !== 'auto') options.language = data.language;
     const result = await recognizer(data.audio, options);
     self.postMessage({type:'complete', result});
