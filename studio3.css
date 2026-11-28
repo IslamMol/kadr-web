@@ -135,6 +135,9 @@ video{display:none}
 .cue-row input{width:auto;accent-color:var(--accent)}
 .cue-row span{color:#dde2ec;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cue-row time{color:var(--muted);font-variant-numeric:tabular-nums}
+.toggle-line{display:flex;align-items:center;gap:8px;font-size:11px;color:#d2d9e6}
+.toggle-line input{width:auto;accent-color:var(--accent)}
+.toggle-line .hint{color:var(--faint);margin-left:auto}
 .cue-editor{display:grid;gap:8px;max-height:340px;overflow:auto;padding-right:2px}
 .cue-editor-row{display:grid;gap:6px;padding:9px;border:1px solid var(--line);border-radius:12px;background:rgba(12,14,19,.74)}
 .cue-top{display:grid;grid-template-columns:auto 1fr auto 1fr auto;gap:5px;align-items:center}

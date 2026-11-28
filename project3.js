@@ -42,6 +42,11 @@ export function normalizeEditor(raw = {}) {
         template: text(g.template, 40) || "clean",
       }];
     }) : [],
+    removePauses: raw.removePauses !== false,
+    silences: Array.isArray(raw.silences) ? raw.silences.slice(0, 200).flatMap((s, i) => {
+      const a = num(s.from, NaN, 0, 1e6), b = num(s.to, NaN, 0, 1e6);
+      return Number.isFinite(a) && Number.isFinite(b) && b > a ? [{ id: text(s.id, 80) || `pause-${i}`, from: a, to: b, enabled: s.enabled !== false }] : [];
+    }) : [],
     cutDeltas: raw.cutDeltas && typeof raw.cutDeltas === "object" && !Array.isArray(raw.cutDeltas)
       ? Object.fromEntries(Object.entries(raw.cutDeltas).slice(0, 20).map(([k, v]) => [String(k).slice(0, 8), {
           delta: num(v?.delta, 0, -1e6, 1e6), base: num(v?.base, 0, 0, 1e6),

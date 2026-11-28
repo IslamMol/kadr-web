@@ -16,6 +16,7 @@ import { createProject3, readProject3 } from "./project3.js";
 import { buildApprovalSheet, qaApproval } from "./approval.js";
 import { wordBoundaries, snapTime } from "./snap.js";
 import { icon, hydrateIcons } from "./icons.js";
+import { detectSilences, removeSilences } from "./silence.js";
 
 const $ = (s) => document.querySelector(s);
 const W = 1080, H = 1920;
@@ -26,6 +27,7 @@ const state = {
   manualGraphics: [], approved: false, drag: null,
   cutDeltas: {}, originalBounds: [], snapPoints: [],
   previewEdls: {}, previewVisible: new Set(), previewTimer: 0,
+  silences: [], demoFrames: [],
 };
 
 function coverDraw(ctx, video, x, y, w, h) {
@@ -69,8 +71,10 @@ function buildEdl() {
     const selected = state.cues.filter(c =>
       !state.excluded.has(c.id) && c.end > start && c.start < end);
     const plan = planGhostEdit(selected, { start, end });
-    const pieces = (plan.pieces.length ? plan.pieces : [{ from: start, to: end }])
+    let pieces = (plan.pieces.length ? plan.pieces : [{ from: start, to: end }])
       .slice().sort((a, b) => a.from - b.from);
+    if ($("#remove-pauses")?.checked) pieces = removeSilences(pieces, state.silences);
+    if (!pieces.length) pieces = [{ from: start, to: end }];
     clips = pieces.map((p, i) => ({
       id: `take-${i + 1}`, src: "video",
       in: Math.max(start, p.from), out: Math.min(end, Math.max(p.from + 0.04, p.to)),
@@ -339,6 +343,7 @@ async function saveProject() {
       editor: {
         template: state.template, cues: state.cues || [], excluded: [...state.excluded],
         manualGraphics: state.manualGraphics, cutDeltas: state.cutDeltas,
+        removePauses: $("#remove-pauses").checked, silences: state.silences,
         start: $("#in").value, end: $("#out").value,
       },
     }, state.file);
@@ -361,6 +366,8 @@ async function openProject(file) {
     state.excluded = new Set(project.editor.excluded);
     state.manualGraphics = project.editor.manualGraphics;
     state.cutDeltas = project.editor.cutDeltas || {};
+    state.silences = project.editor.silences || [];
+    $("#remove-pauses").checked = project.editor.removePauses !== false;
     $("#in").value = String(project.editor.start);
     $("#out").value = String(project.editor.end);
     state.edl = project.edl;
@@ -488,8 +495,16 @@ async function loadFile(file) {
   state.duration = video.duration;
   $("#in").value = "0";
   $("#out").value = String(Math.min(state.duration, 30));
-  $("#status").textContent = `Видео загружено: ${state.duration.toFixed(1)} с. Напиши фразы и нажми «Собрать проект».`;
+  $("#status").textContent = `Видео загружено: ${state.duration.toFixed(1)} с. Нажми «Распознать речь» — фразы появятся сами.`;
+  $("#silence-info").textContent = "Слушаем паузы…";
   buildEdl();
+  detectSilences(file).then(result => {
+    state.silences = result.ranges;
+    $("#silence-info").textContent = result.silent
+      ? "Речь не найдена — паузы не трогаем."
+      : `Пауз найдено: ${result.ranges.length}.`;
+    buildEdl();
+  }).catch(() => { $("#silence-info").textContent = "Паузы не проанализированы."; });
 }
 
 async function exportMp4() {
@@ -560,7 +575,27 @@ async function exportMp4() {
 
 // Живые превью шаблонов: тот же renderFrame, что и в экспорте.
 // Это не картинки-заглушки — каждый кадр собран из EDL шаблона.
-function previewSource(ctx, rect) {
+async function loadDemoFrames() {
+  const video = document.createElement("video");
+  video.src = "./demo-portrait.mp4"; video.muted = true; video.playsInline = true;
+  try {
+    await new Promise((res, rej) => { video.onloadeddata = res; video.onerror = rej; });
+    for (const t of [0.25, 1.1, 2.3]) {
+      await new Promise(res => { video.onseeked = res; video.currentTime = Math.min(t, Math.max(0, video.duration - 0.05)); });
+      const frame = document.createElement("canvas");
+      frame.width = 216; frame.height = 384;
+      frame.getContext("2d").drawImage(video, 0, 0, 216, 384);
+      state.demoFrames.push(frame);
+    }
+  } catch {}
+}
+
+function previewSource(ctx, rect, localT = 0) {
+  if (state.demoFrames.length) {
+    const frame = state.demoFrames[Math.floor(Math.abs(localT) * 1.5) % state.demoFrames.length];
+    ctx.drawImage(frame, rect.x, rect.y, rect.w, rect.h);
+    return;
+  }
   const g = ctx.createLinearGradient(0, rect.y, 0, rect.y + rect.h);
   g.addColorStop(0, "#3b5364"); g.addColorStop(1, "#101821");
   ctx.fillStyle = g; ctx.fillRect(rect.x, rect.y, rect.w, rect.h);
@@ -687,7 +722,7 @@ async function loadExample(id) {
   }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   hydrateIcons(document);
   const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   document.querySelectorAll("[data-goto]").forEach(btn => btn.addEventListener("click", () => {
@@ -712,7 +747,10 @@ document.addEventListener("DOMContentLoaded", () => {
       <strong>${e.name}</strong><small>${e.note}</small>
     </button>`
   ).join("");
-  requestAnimationFrame(() => { renderTemplatePreviews(); renderExamplePreviews(); startPreviewLoop(); });
+  requestAnimationFrame(async () => {
+    await loadDemoFrames();
+    renderTemplatePreviews(); renderExamplePreviews(); startPreviewLoop();
+  });
   $("#file").addEventListener("change", e => loadFile(e.target.files?.[0]).catch(err => { $("#status").textContent = err.message; }));
   $("#build").addEventListener("click", buildEdl);
   $("#export").addEventListener("click", exportMp4);
@@ -728,6 +766,7 @@ document.addEventListener("DOMContentLoaded", () => {
       buildEdl();
     }).catch(err => { $("#status").textContent = err.message || "Не удалось прочитать SRT."; });
   });
+  $("#remove-pauses").addEventListener("change", buildEdl);
   $("#cues").addEventListener("change", e => {
     const row = e.target.closest("[data-cue]");
     if (!row || !e.target.dataset.field) return;
