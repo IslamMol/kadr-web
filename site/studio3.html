@@ -53,6 +53,32 @@ a.badge:hover{border-color:var(--accent);color:var(--text);background:rgba(185,1
 .icon-btn{padding:5px 7px!important}
 .transport{display:flex;align-items:center;gap:10px;width:min(100%,390px)}
 .time-readout{font-variant-numeric:tabular-nums}
+header .sub{font-size:12px;color:var(--muted);letter-spacing:0;font-weight:500}
+.quick-start{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;padding:10px 12px;border:1px solid rgba(185,198,255,.14);border-radius:14px;background:linear-gradient(135deg,rgba(109,130,255,.10),rgba(255,255,255,.02));font-size:11px;color:var(--muted)}
+.quick-start strong{font-size:12px;color:var(--text);margin-right:2px}
+.quick-start span{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.quick-start b{display:grid;place-items:center;width:21px;height:21px;border-radius:7px;background:rgba(185,198,255,.18);color:#dfe6ff;font-size:10px;font-style:normal}
+.editor-tabs{position:sticky;top:70px;z-index:10;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding:4px;border:1px solid var(--line);border-radius:12px;background:rgba(12,14,19,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.editor-tabs button{min-width:0;min-height:36px;border:0;border-radius:9px;background:transparent;color:var(--muted);font-size:12px;font-weight:700;box-shadow:none}
+.editor-tabs button:hover{transform:none;background:rgba(255,255,255,.05);color:var(--text)}
+.editor-tabs button[aria-pressed=true]{background:linear-gradient(145deg,#3b4152,#303543);color:#f5f7fb;box-shadow:0 2px 8px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.09)}
+.section-block{display:grid;gap:11px;padding:14px 12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,.018)}
+.sec-title{display:flex;align-items:center;gap:9px}
+.sec-title strong{font-size:13px;font-weight:750;letter-spacing:-.012em}
+.step-num{display:grid;place-items:center;width:22px;height:22px;border-radius:8px;background:rgba(185,198,255,.16);color:#dfe6ff;font-size:11px;font-weight:800}
+.source-box{position:relative;display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:14px 12px 16px;border:1px dashed rgba(185,198,255,.35);border-radius:13px;background:rgba(185,198,255,.04);cursor:pointer}
+.source-box:hover{border-color:var(--accent);background:rgba(185,198,255,.08)}
+.source-box input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.source-box small{flex:1 1 100%;color:var(--faint);font-size:10px;line-height:1.4;margin-top:2px}
+.spaced{margin-top:4px}
+.side-action{position:sticky;bottom:0;z-index:9;display:grid;gap:9px;padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(16,18,24,.9);backdrop-filter:blur(18px) saturate(160%);-webkit-backdrop-filter:blur(18px) saturate(160%);box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 -10px 26px rgba(0,0,0,.28)}
+.export-settings{display:flex;align-items:center;justify-content:space-between;gap:10px;color:var(--muted);font-size:11px;font-weight:700}
+.stage-head,.stage-foot{width:min(100%,390px);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.stage-head strong{display:inline-flex;align-items:center;gap:7px;font-size:13px;letter-spacing:-.012em}
+.stage .badge{white-space:nowrap}
+.stage-foot .transport{flex:1}
+.stage-foot .time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.stage-note{margin:0;color:var(--faint);font-size:10px;text-align:center}
 
 .grid{display:grid;grid-template-columns:minmax(300px,438px) 1fr;gap:20px;align-items:start}
 @media(max-width:900px){.grid{grid-template-columns:1fr}.stage{position:static}}
@@ -61,7 +87,7 @@ a.badge:hover{border-color:var(--accent);color:var(--text);background:rgba(185,1
   background:var(--surface);backdrop-filter:blur(18px) saturate(150%);-webkit-backdrop-filter:blur(18px) saturate(150%);
   box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 18px 50px rgba(0,0,0,.32);
 }
-.panel{display:grid;gap:16px;padding:18px;animation:enter .48s cubic-bezier(.2,.8,.2,1) both}
+.panel{display:grid;gap:12px;padding:14px;animation:enter .48s cubic-bezier(.2,.8,.2,1) both}
 .stage{position:sticky;top:88px;display:grid;gap:14px;justify-items:center;padding:16px;animation:enter .48s .07s cubic-bezier(.2,.8,.2,1) both}
 @keyframes enter{from{opacity:0;transform:translateY(12px) scale(.995)}to{opacity:1;transform:none}}
 
@@ -157,87 +183,103 @@ input[type=range]{padding:0;accent-color:var(--accent)}
 <body>
   <div class="shell">
     <header>
-      <span class="brandmark">К</span>
-      <b>Кадр</b>
-      <span class="badge">Студия 3.0 · локально в браузере</span>
+      <span class="brandmark">К</span><b>Кадр</b><span class="sub">Студия 3.0</span>
+      <span class="badge">На твоём устройстве</span>
       <a class="badge badge-icon" href="https://github.com/IslamMol/kadr-web/releases/latest/download/kadr-desktop.zip"><span data-icon="download"></span> Windows</a>
     </header>
 
     <div class="grid">
       <section class="panel">
-        <label class="field-title"><span data-icon="upload"></span> Видео<input id="file" type="file" accept="video/*,.mov,.mp4,.webm,.mkv"></label>
-
-        <div class="row">
-          <label>Начало, сек<input id="in" type="number" min="0" step="0.1" value="0"></label>
-          <label>Конец, сек<input id="out" type="number" min="0.2" step="0.1" value="30"></label>
+        <div class="quick-start">
+          <strong>С видео до ролика — три шага</strong>
+          <span><b data-icon="upload"></b> Видео</span>
+          <span><b data-icon="captions"></b> Слова и сцены</span>
+          <span><b data-icon="sparkles"></b> Шаблон</span>
         </div>
 
-        <div class="row">
-          <label>Язык речи
-            <select id="language">
-              <option value="russian">Русский</option>
-              <option value="english">Английский</option>
-              <option value="auto">Определить</option>
-            </select>
+        <nav class="editor-tabs" aria-label="Шаги редактора">
+          <button type="button" data-goto="step-video" aria-pressed="true"><span data-icon="upload"></span> Видео</button>
+          <button type="button" data-goto="step-words" aria-pressed="false"><span data-icon="captions"></span> Слова</button>
+          <button type="button" data-goto="step-look" aria-pressed="false"><span data-icon="sparkles"></span> Вид</button>
+        </nav>
+
+        <div id="step-video" class="section-block">
+          <div class="sec-title"><span class="step-num">1</span><strong>Видео</strong></div>
+          <label class="source-box"><span data-icon="upload"></span> Выбрать видео
+            <input id="file" type="file" accept="video/*,.mov,.mp4,.webm,.mkv">
+            <small>MP4, MOV, WebM. Не подойдёт — предложим преобразовать.</small>
           </label>
-          <label class="action-label">&nbsp;<button id="asr"><span data-icon="mic"></span> Распознать речь</button></label>
+          <div class="row">
+            <label>Начало, сек<input id="in" type="number" min="0" step="0.1" value="0"></label>
+            <label>Конец, сек<input id="out" type="number" min="0.2" step="0.1" value="30"></label>
+          </div>
+          <div class="row">
+            <label>Язык речи
+              <select id="language">
+                <option value="russian">Русский</option>
+                <option value="english">Английский</option>
+                <option value="auto">Определить</option>
+              </select>
+            </label>
+            <label class="action-label">&nbsp;<button id="asr"><span data-icon="mic"></span> Распознать речь</button></label>
+          </div>
+          <input id="srt" type="file" accept=".srt,text/plain" hidden>
+          <button id="srt-load" class="small wide"><span data-icon="file"></span> Загрузить SRT</button>
         </div>
 
-        <input id="srt" type="file" accept=".srt,text/plain" hidden>
-        <button id="srt-load" class="small wide"><span data-icon="file"></span> Загрузить SRT</button>
-
-        <label>Фразы, каждую с новой строки<textarea id="words" placeholder="Маленький перерыв&#10;Для больших идей">Маленький перерыв
+        <div id="step-words" class="section-block">
+          <div class="sec-title"><span class="step-num">2</span><strong>Слова и сцены</strong></div>
+          <label>Фразы, каждую с новой строки<textarea id="words" placeholder="Маленький перерыв&#10;Для больших идей">Маленький перерыв
 Для больших идей</textarea></label>
-
-        <div id="cues" class="cue-list"></div>
-
-        <div>
+          <div id="cues" class="cue-list"></div>
           <p class="hint"><span data-icon="layers"></span> Сцены на таймлайне — перетащи плашку мышью</p>
           <div id="timeline" class="timeline"><span class="playhead"></span></div>
           <div id="scenes" class="scene-list"></div>
           <button id="add-scene" class="small wide"><span data-icon="plus"></span> Добавить сцену на текущем кадре</button>
         </div>
 
-        <div>
+        <div id="step-look" class="section-block">
+          <div class="sec-title"><span class="step-num">3</span><strong>Шаблон монтажа</strong></div>
           <p class="hint"><span data-icon="sparkles"></span> Живые превью показывают субтитры, сцену и движение. Нажми — применится всё сразу.</p>
           <div id="filters" class="filters"></div>
           <div id="templates" class="cards"></div>
-        </div>
-
-        <div>
-          <p class="hint"><span data-icon="eye"></span> Готовые примеры на встроенном видео</p>
+          <p class="hint spaced"><span data-icon="eye"></span> Готовые примеры на встроенном видео</p>
           <div id="examples" class="cards"></div>
+          <button id="build"><span data-icon="layers"></span> Собрать проект</button>
+          <div class="row">
+            <button id="save-project" class="small"><span data-icon="save"></span> Сохранить .kadr3</button>
+            <button id="open-project" class="small"><span data-icon="folder"></span> Открыть .kadr3</button>
+          </div>
+          <input id="project-file" type="file" accept=".kadr3,application/octet-stream" hidden>
         </div>
-
-        <button id="build"><span data-icon="layers"></span> Собрать проект</button>
-        <div class="row">
-          <button id="save-project" class="small"><span data-icon="save"></span> Сохранить .kadr3</button>
-          <button id="open-project" class="small"><span data-icon="folder"></span> Открыть .kadr3</button>
-        </div>
-
-        <input id="project-file" type="file" accept=".kadr3,application/octet-stream" hidden>
 
         <details id="approval-box" class="advanced-box">
           <summary>Лист проверки перед сборкой</summary>
           <div id="approval-list"></div>
           <div id="approval-warnings"></div>
         </details>
-
         <label class="voice-consent"><input id="approved" type="checkbox"><span>Я просмотрел(а) склейки и сцены из листа проверки.</span></label>
 
-        <button id="export" class="primary"><span data-icon="sparkles"></span> Собрать MP4</button>
-        <a id="download" class="download"><span data-icon="download"></span> Скачать MP4</a>
-        <div id="progress" class="progress"><span></span></div>
-        <p id="status" class="status"></p>
+        <div class="side-action">
+          <div class="export-settings"><span>Размер MP4</span><span class="badge">1080 × 1920 · 30 кадров/с</span></div>
+          <button id="export" class="primary"><span data-icon="sparkles"></span> Собрать MP4</button>
+          <a id="download" class="download"><span data-icon="download"></span> Скачать MP4</a>
+          <div id="progress" class="progress"><span></span></div>
+          <p id="status" class="status"></p>
+        </div>
       </section>
 
       <section class="stage">
+        <div class="stage-head"><strong><span data-icon="eye"></span> Предпросмотр</strong><span class="badge">9:16 · 1080 × 1920</span></div>
         <canvas id="canvas" width="1080" height="1920"></canvas>
-        <div class="transport">
-          <button id="play" class="small"><span data-icon="play"></span> Играть</button>
-          <input id="range" type="range" min="0" max="6" step="0.01" value="0" aria-label="Позиция воспроизведения">
+        <div class="stage-foot">
+          <div class="transport">
+            <button id="play" class="small"><span data-icon="play"></span> Играть</button>
+            <input id="range" type="range" min="0" max="6" step="0.01" value="0" aria-label="Позиция воспроизведения">
+          </div>
+          <span id="time" class="time"></span>
         </div>
-        <span id="time" class="hint time-readout"></span>
+        <p class="stage-note">Проверь лицо, субтитры и склейки перед сборкой.</p>
       </section>
     </div>
   </div>
@@ -3432,15 +3474,15 @@ self.onmessage = async ({data}) => {
     </div>`).join("")}}function el(){let t=$t(E.template),x=Math.max(0,Number(E.t)||0),e=(E.cues||[]).find(r=>x>=r.start&&x<=r.end)?.text||t.sample;E.manualGraphics.push({id:`manual-${Date.now().toString(36)}`,type:ci.includes(t.graphic)?t.graphic:"title",at:x,duration:2.2,label:String(e).slice(0,70),value:"",steps:[],template:t.caption}),nx()}function fF(t,x,e){let r=E.manualGraphics.find(A=>A.id===t);r&&(x==="at"?r.at=Math.max(0,Number(e)||0):r[x]=String(e).slice(0,120),nx())}function lF(t){if(!E.edl)return;E.t=Math.max(0,Math.min(E.edl.duration,t));let x=I("#range");x&&(x.value=String(E.t)),E.video&&!E.playing&&(E.video.currentTime=Ut(E.edl,E.t)),ze()}function is(){let t=I("#timeline");if(!t||!E.edl)return;let x=Math.max(.001,E.edl.duration);t.innerHTML="",E.edl.spans.slice(0,-1).forEach((r,A)=>{let i=document.createElement("button");i.type="button",i.className="cut",i.dataset.cut=String(A),i.dataset.base=String(E.originalBounds[A]??r.end),i.style.left=`${r.end/x*100}%`,i.title=`\u0421\u043A\u043B\u0435\u0439\u043A\u0430 ${A+1} \u2014 \u043F\u0435\u0440\u0435\u0442\u0430\u0449\u0438 \u0438\u043B\u0438 \u043D\u0430\u0436\u043C\u0438 \u0434\u043B\u044F \u043F\u0435\u0440\u0435\u0445\u043E\u0434\u0430`,i.addEventListener("pointerdown",n=>{n.preventDefault();let s=t.getBoundingClientRect();E.drag={type:"cut",index:A,startX:n.clientX,startAt:r.end,at:r.end,base:Number(i.dataset.base),rect:s};try{i.setPointerCapture?.(n.pointerId)}catch{}}),t.appendChild(i)}),E.manualGraphics.forEach(r=>{let A=document.createElement("button");A.type="button",A.className="scene-chip",A.dataset.scene=r.id,A.style.left=`${Math.min(97,r.at/x*100)}%`,A.style.setProperty("--chip",$t(E.template).accent),A.textContent=r.type,A.title=`${r.type} \xB7 ${r.at.toFixed(1)}\u0441 \u2014 \u043F\u0435\u0440\u0435\u0442\u0430\u0449\u0438`,A.addEventListener("pointerdown",i=>{i.preventDefault();let n=t.getBoundingClientRect();E.drag={type:"scene",id:r.id,startX:i.clientX,startAt:r.at,at:r.at,rect:n};try{A.setPointerCapture?.(i.pointerId)}catch{}}),t.appendChild(A)});let e=document.createElement("span");e.className="playhead",e.style.left=`${E.t/x*100}%`,t.appendChild(e)}function tl(t){let x=E.drag;if(!x||!E.edl)return;let e=Math.max(.001,E.edl.duration),r=(t.clientX-x.startX)/Math.max(1,x.rect.width)*e,A=Math.max(0,Math.min(e,x.startAt+r)),i=Math.max(.02,10/Math.max(1,x.rect.width)*e),n=nF(A,E.snapPoints,i);x.at=n.time,x.snapped=n.snapped;let s=x.type==="cut"?document.querySelector(`[data-cut="${x.index}"]`):document.querySelector(`[data-scene="${x.id}"]`);s&&(s.style.left=`${Math.min(99,x.at/e*100)}%`,s.classList.toggle("snapped",n.snapped))}function oF(){let t=E.drag;if(t){if(E.drag=null,t.type==="cut"){let x=t.at-t.startAt;if(Math.abs(x)<.03)lF(t.startAt);else{let e=String(t.index),r=E.cutDeltas[e];E.cutDeltas[e]={delta:(r?.delta||0)+x,base:r?.base??t.base},nx()}return}fF(t.id,"at",t.at)}}function ui(){let t=I("#approval-list");if(!t||!E.edl)return;let x=_r(E.edl),e=iF(E.edl,x);t.innerHTML=x.length?x.map((n,s)=>`<button type="button" class="approval-row" data-approval="${s}"><time>${n.time.toFixed(2)}\u0441</time><span><strong>${n.title}</strong><small>${Ve(n.detail)}</small></span></button>`).join(""):'<p class="hint">\u0422\u043E\u0447\u0435\u043A \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438 \u043D\u0435\u0442.</p>';let r=I("#approval-warnings");r&&(r.innerHTML=e.map(n=>`<p><strong>${Ve(n.title)}.</strong> ${Ve(n.detail)}</p>`).join(""));let A=I("#approval-box summary");A&&(A.innerHTML=`${z0("check",14)} \u041B\u0438\u0441\u0442 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438 \u043F\u0435\u0440\u0435\u0434 \u0441\u0431\u043E\u0440\u043A\u043E\u0439 \xB7 ${x.length}`);let i=I("#export");i&&(i.disabled=x.length>0&&!E.approved)}async function rl(){if(!(!E.file||!E.edl||E.busy))try{let t=rF({edl:E.edl,editor:{template:E.template,cues:E.cues||[],excluded:[...E.excluded],words:I("#words").value,manualGraphics:E.manualGraphics,cutDeltas:E.cutDeltas,start:I("#in").value,end:I("#out").value}},E.file),x=URL.createObjectURL(t),e=document.createElement("a"),r=String(E.file.name||"\u0440\u043E\u043B\u0438\u043A").replace(/\.[^.]+$/,"");e.href=x,e.download=`\u041A\u0430\u0434\u04403 \u2014 ${r}.kadr3`,e.click(),setTimeout(()=>URL.revokeObjectURL(x),6e4),I("#status").textContent="\u041F\u0440\u043E\u0435\u043A\u0442 .kadr3 \u0441\u043E\u0445\u0440\u0430\u043D\u0451\u043D \u0432\u043C\u0435\u0441\u0442\u0435 \u0441 \u0432\u0438\u0434\u0435\u043E."}catch(t){I("#status").textContent=t?.message||"\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0441\u043E\u0445\u0440\u0430\u043D\u0438\u0442\u044C \u043F\u0440\u043E\u0435\u043A\u0442."}}async function Al(t){if(!(!t||E.busy))try{let x=await AF(t);await ns(x.blob),E.template=x.editor.template,E.cues=x.editor.cues.length?x.editor.cues:null,E.excluded=new Set(x.editor.excluded),E.manualGraphics=x.editor.manualGraphics,E.cutDeltas=x.editor.cutDeltas||{},I("#words").value=x.editor.words,I("#in").value=String(x.editor.start),I("#out").value=String(x.editor.end),E.edl=x.edl,E.snapPoints=ts(E.edl),I("#range").max=String(Math.max(.1,E.edl.duration)),E.t=0,document.querySelectorAll("[data-template]").forEach(r=>r.classList.toggle("active",r.dataset.template===E.template)),E.approved=!1;let e=I("#approved");e&&(e.checked=!1),cF(),As(),is(),ui(),ze(),I("#status").textContent=`\u041E\u0442\u043A\u0440\u044B\u0442 \u043F\u0440\u043E\u0435\u043A\u0442: ${x.name}. ${E.edl.duration.toFixed(1)} \u0441, ${E.edl.clips.length} \u0441\u043A\u043B\u0435\u0435\u043A.`}catch(x){I("#status").textContent=x?.message||"\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u043E\u0435\u043A\u0442."}}function il(t){return String(t||"").replace(/\r/g,"").trim().split(/\n\s*\n+/).flatMap((e,r)=>{let A=e.split(`
 `).filter(Boolean),i=A.find(l=>l.includes("-->"));if(!i)return[];let[n,s]=i.split("-->").map(l=>l.trim().replace(",",".")),a=l=>{let u=l.split(":").map(Number);return u.length===3?u[0]*3600+u[1]*60+u[2]:u.length===2?u[0]*60+u[1]:0},o=a(n),c=a(s);if(!(c>o))return[];let F=A.filter(l=>l!==i&&!/^\d+$/.test(l.trim())).join(" ").trim().split(/\s+/).filter(Boolean),f=(c-o)/Math.max(1,F.length);return[{id:`srt-${r+1}`,start:o,end:c,text:F.join(" "),words:F.map((l,u)=>({text:l,start:o+f*u,end:o+f*(u+1)}))}]})}async function nl(){if(!E.file||E.asrBusy)return;E.asrBusy=!0;let t=I("#asr");t.disabled=!0,t.innerHTML=`${z0("clock",14)} \u0417\u0430\u0433\u0440\u0443\u0436\u0430\u0435\u043C \u043C\u043E\u0434\u0435\u043B\u044C\u2026`;let x;try{let e=window.AudioContext||window.webkitAudioContext;if(!e||!window.OfflineAudioContext||!window.Worker)throw new Error("\u0414\u043B\u044F \u0440\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0432\u0430\u043D\u0438\u044F \u043D\u0443\u0436\u0435\u043D \u0430\u043A\u0442\u0443\u0430\u043B\u044C\u043D\u044B\u0439 Chrome \u0438\u043B\u0438 Edge \u043D\u0430 \u043A\u043E\u043C\u043F\u044C\u044E\u0442\u0435\u0440\u0435.");x=new e;let r;try{r=await x.decodeAudioData(await E.file.arrayBuffer())}catch{throw new Error("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u0437\u0432\u0443\u043A. \u041D\u0443\u0436\u0435\u043D MP4 \u0441 AAC, WAV \u0438\u043B\u0438 \u0437\u0430\u0433\u0440\u0443\u0437\u0438 SRT.")}let A=new OfflineAudioContext(1,Math.max(1,Math.ceil(r.duration*16e3)),16e3),i=A.createBufferSource();i.buffer=r,i.connect(A.destination),i.start();let s=(await A.startRendering()).getChannelData(0).slice();try{await x.close()}catch{}x=null;let{worker:a,revoke:o}=Xo();E.asrWorker=a;let c=await new Promise((f,l)=>{a.onmessage=({data:u})=>{u.type==="recognizing"?t.innerHTML=`${z0("mic",14)} \u0420\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0451\u043C \u0440\u0435\u0447\u044C\u2026`:u.type==="complete"?(a.terminate(),o(),f(u.result)):u.type==="error"&&(a.terminate(),o(),l(new Error("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0437\u0430\u043F\u0443\u0441\u0442\u0438\u0442\u044C \u043C\u043E\u0434\u0435\u043B\u044C. \u041F\u0440\u043E\u0432\u0435\u0440\u044C \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442; \u043C\u043E\u0436\u043D\u043E \u0437\u0430\u0433\u0440\u0443\u0437\u0438\u0442\u044C SRT.")))},a.onerror=()=>{a.terminate(),o(),l(new Error("\u041C\u043E\u0434\u0435\u043B\u044C \u043D\u0435 \u0437\u0430\u043F\u0443\u0441\u0442\u0438\u043B\u0430\u0441\u044C. \u041F\u0440\u043E\u0432\u0435\u0440\u044C \u0438\u043D\u0442\u0435\u0440\u043D\u0435\u0442 \u0438 \u043F\u0430\u043C\u044F\u0442\u044C."))},a.postMessage({audio:s,language:I("#language").value},[s.buffer])}),F=Qo(c,E.duration);E.cues=F.cues,E.excluded=new Set,I("#words").value=F.cues.map(f=>f.text).join(`
 `),I("#status").textContent=`\u0420\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u043D\u043E ${F.cues.length} \u0444\u0440\u0430\u0437 \u0441\u043E \u0441\u043B\u043E\u0432\u0430\u043C\u0438. \u0414\u0443\u0431\u043B\u0438 \u0443\u0431\u0438\u0440\u0430\u044E\u0442\u0441\u044F \u0430\u0432\u0442\u043E\u043C\u0430\u0442\u0438\u0447\u0435\u0441\u043A\u0438.`,nx()}catch(e){I("#status").textContent=e?.message||"\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0440\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0442\u044C \u0440\u0435\u0447\u044C."}finally{if(x)try{await x.close()}catch{}E.asrBusy=!1,E.asrWorker=null,t.disabled=!1,t.innerHTML=`${z0("mic",14)} \u0420\u0430\u0441\u043F\u043E\u0437\u043D\u0430\u0442\u044C \u0440\u0435\u0447\u044C`}}function ze(){if(!E.edl)return;let t=I("#canvas").getContext("2d"),x=E.video?{video:{draw(r,A){Zf(r,E.video,A.x,A.y,A.w,A.h)}}}:{};fi(t,E.edl,E.t,x),I("#time").textContent=`${E.t.toFixed(1)} / ${E.edl.duration.toFixed(1)} \u0441`;let e=I("#timeline .playhead");e&&(e.style.left=`${E.t/Math.max(.001,E.edl.duration)*100}%`)}async function ns(t){if(!t||E.busy)return;E.file=t,E.url&&URL.revokeObjectURL(E.url),E.url=URL.createObjectURL(t);let x=document.createElement("video");x.src=E.url,x.muted=!0,x.playsInline=!0,x.preload="metadata",x.onseeked=()=>ze(),await new Promise((e,r)=>{x.onloadedmetadata=e,x.onerror=()=>r(new Error("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C \u0432\u0438\u0434\u0435\u043E. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439 MP4 \u0438\u043B\u0438 WebM."))}),E.video=x,E.duration=x.duration,I("#in").value="0",I("#out").value=String(Math.min(E.duration,30)),I("#status").textContent=`\u0412\u0438\u0434\u0435\u043E \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D\u043E: ${E.duration.toFixed(1)} \u0441. \u041D\u0430\u043F\u0438\u0448\u0438 \u0444\u0440\u0430\u0437\u044B \u0438 \u043D\u0430\u0436\u043C\u0438 \xAB\u0421\u043E\u0431\u0440\u0430\u0442\u044C \u043F\u0440\u043E\u0435\u043A\u0442\xBB.`,nx()}async function sl(){if(!E.file||!E.edl||E.busy)return;if(_r(E.edl).length>0&&!E.approved){I("#status").textContent="\u0421\u043D\u0430\u0447\u0430\u043B\u0430 \u043E\u0442\u043C\u0435\u0442\u044C \u043B\u0438\u0441\u0442 \u043F\u0440\u043E\u0432\u0435\u0440\u043A\u0438 \u0432\u044B\u0448\u0435.";return}E.busy=!0;let t=I("#export");t.disabled=!0,t.innerHTML=`${z0("clock",16)} \u0421\u043E\u0431\u0438\u0440\u0430\u0435\u043C\u2026`,I("#progress").style.display="block";let x=null;try{await Cr("aac")||Yn();let e=new Lx({source:new dr(E.file),formats:vn});if(!await e.getPrimaryVideoTrack())throw new Error("\u0412 \u0444\u0430\u0439\u043B\u0435 \u043D\u0435\u0442 \u0432\u0438\u0434\u0435\u043E\u0434\u043E\u0440\u043E\u0436\u043A\u0438.");await Cr("aac")||Yn();let A=new fe({format:new ce({fastStart:"in-memory"}),target:new $x}),i=E.edl.clips,n=Math.min(...i.map(l=>l.in)),s=Math.max(...i.map(l=>l.out)),a=document.createElement("canvas");a.width=Pr,a.height=Ir;let o=a.getContext("2d",{alpha:!1}),c={codec:"avc",width:1080,height:1920,fit:"fill",processedWidth:Pr,processedHeight:Ir,frameRate:30,bitrate:7e6,allowRotationMetadata:!1,process:l=>{let u=l.timestamp+n,d=Uo(E.edl,u);if(!d)return null;let h=d.outputT;return fi(o,E.edl,h,{video:{draw(m,B){l.draw(m,B.x,B.y,B.w,B.h)}}}),new f0(a,{timestamp:h,duration:l.duration})}};x=await Tr.init({input:e,output:A,tracks:"primary",trim:{start:n,end:s},video:c,audio:{codec:"aac",bitrate:128e3},showWarnings:!1}),x.onProgress=l=>{let u=Math.round(Math.max(0,Math.min(1,l))*100);I("#progress span").style.width=u+"%"},await x.execute();let F=A.target.buffer;if(!F?.byteLength)throw new Error("\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u043E\u043B\u0443\u0447\u0438\u0442\u044C MP4. \u041F\u043E\u043F\u0440\u043E\u0431\u0443\u0439 \u0434\u0440\u0443\u0433\u043E\u0439 \u0444\u0430\u0439\u043B.");E.result?.url&&URL.revokeObjectURL(E.result.url),E.result={name:"kadr3.mp4",url:URL.createObjectURL(new Blob([F],{type:"video/mp4"}))};let f=I("#download");f.href=E.result.url,f.download=E.result.name,f.style.display="block",I("#status").textContent="\u0413\u043E\u0442\u043E\u0432\u043E. MP4 \u0441\u043E\u0431\u0440\u0430\u043D \u0432 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0435, \u0431\u0435\u0437 \u0437\u0430\u0433\u0440\u0443\u0437\u043A\u0438 \u0432\u0438\u0434\u0435\u043E \u043D\u0430 \u0441\u0435\u0440\u0432\u0435\u0440."}catch(e){I("#status").textContent=e?.message||"\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u0441\u043E\u0431\u0440\u0430\u0442\u044C \u0440\u043E\u043B\u0438\u043A."}finally{E.busy=!1,E.conversion=x,t.disabled=!1,t.innerHTML=`${z0("sparkles",16)} \u0421\u043E\u0431\u0440\u0430\u0442\u044C MP4`,I("#progress").style.display="none"}}function al(t,x){let e=t.createLinearGradient(0,x.y,0,x.y+x.h);e.addColorStop(0,"#3b5364"),e.addColorStop(1,"#101821"),t.fillStyle=e,t.fillRect(x.x,x.y,x.w,x.h),t.fillStyle="rgba(226,188,150,.88)",t.beginPath(),t.arc(x.x+x.w*.5,x.y+x.h*.42,x.w*.17,0,Math.PI*2),t.fill(),t.fillStyle="rgba(24,31,41,.95)",t.beginPath(),t.arc(x.x+x.w*.5,x.y+x.h*.84,x.w*.36,Math.PI,0),t.fill(),t.fillStyle="rgba(255,255,255,.10)",t.fillRect(x.x,x.y+x.h*.12,x.w,2)}var FF=0;function dF(t,x){let e=["cinematic","halftone","ink","graph"].includes(t.look)?.12:.04;return le({output:{width:216,height:384,fps:30},clips:[{id:"preview",src:"video",in:0,out:2.6}],captions:x.map(r=>({...r,template:t.caption})),graphics:es(x,t.id),look:{preset:t.look,accent:t.accent,grain:e,vignette:.18}})}function rs(t,x,e){if(t)try{fi(t.getContext("2d"),x,e,{video:{draw:al}})}catch{}}function uF(t,x,e,r){x&&(E.previewEdls[t]={canvas:x,edl:e,t:r},rs(x,e,r))}function ol(){for(let t of Ht){let x=document.querySelector(`[data-tpl-preview="${t.id}"]`);if(!x)continue;let e=t.sample.split(/\s+/).filter(Boolean),r=.85/Math.max(1,e.length),A=[{id:"a",start:.15,end:1,text:t.sample,template:t.caption,words:e.map((n,s)=>({text:n,start:.15+r*s,end:.15+r*(s+1)}))},{id:"b",start:1.15,end:2.2,text:"39% \u0438\u0434\u0435\u0439 \u0432 \u0433\u043E\u043B\u043E\u0432\u0443",template:t.caption,words:[{text:"39%",start:1.15,end:1.45},{text:"\u0438\u0434\u0435\u0439",start:1.45,end:1.8},{text:"\u0432 \u0433\u043E\u043B\u043E\u0432\u0443.",start:1.8,end:2.2}]}],i=dF(t,A);uF(t.id,x,i,Math.min(1.7,(i.graphics[0]?.at||.5)+.12))}}function Fl(){for(let t of di){let x=document.querySelector(`[data-ex-preview="${t.id}"]`);if(!x)continue;let e=$t(t.template),r=dF(e,t.cues);uF(`ex:${t.id}`,x,r,1.35)}}function cl(){E.previewTimer&&cancelAnimationFrame(E.previewTimer);let t=[...document.querySelectorAll("[data-tpl-preview],[data-ex-preview]")],x=i=>i.dataset.tplPreview?i.dataset.tplPreview:`ex:${i.dataset.exPreview}`;if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){t.forEach(i=>{let n=E.previewEdls[x(i)];n&&rs(n.canvas,n.edl,n.t)});return}if("IntersectionObserver"in window){let i=new IntersectionObserver(n=>{for(let s of n){let a=x(s.target);s.isIntersecting?E.previewVisible.add(a):E.previewVisible.delete(a)}},{rootMargin:"160px"});t.forEach(n=>i.observe(n))}else t.forEach(i=>E.previewVisible.add(x(i)));FF=performance.now();let r=0,A=i=>{if(E.previewTimer=requestAnimationFrame(A),document.hidden||i-r<66)return;r=i;let n=(i-FF)/1e3;for(let s of E.previewVisible){let a=E.previewEdls[s];if(!a)continue;let o=Math.max(.1,a.edl.duration);rs(a.canvas,a.edl,(n%o+o)%o)}};E.previewTimer=requestAnimationFrame(A)}async function fl(t){let x=di.find(e=>e.id===t);if(!(!x||E.busy))try{if(!E.file){let e=await fetch("./demo-portrait.mp4");if(!e.ok)throw new Error("\u041F\u0440\u0438\u043C\u0435\u0440 \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D \u0440\u044F\u0434\u043E\u043C \u0441\u043E \u0441\u0442\u0440\u0430\u043D\u0438\u0446\u0435\u0439.");let r=await e.blob();await ns(new File([r],"\u0434\u0435\u043C\u043E-\u0434\u0443\u0431\u043B\u044C.mp4",{type:"video/mp4"}))}E.template=x.template,E.cues=x.cues.map(e=>({...e,id:e.id||`ex-${Math.random().toString(36).slice(2,8)}`})),E.excluded=new Set,I("#words").value=E.cues.map(e=>e.text).join(`
-`),document.querySelectorAll("[data-template]").forEach(e=>e.classList.toggle("active",e.dataset.template===x.template)),document.querySelectorAll("[data-example]").forEach(e=>e.classList.toggle("active",e.dataset.example===t)),I("#status").textContent=x.note,nx()}catch(e){I("#status").textContent=e?.message||"\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043C\u0435\u0440."}}document.addEventListener("DOMContentLoaded",()=>{aF(document),window.__kadr3=E;let t=["\u0412\u0441\u0435",...new Set(Ht.map(x=>x.family.split("\xB7")[0].trim()))];I("#filters").innerHTML=t.map((x,e)=>`<button type="button" class="filter${e===0?" active":""}" data-filter="${Ve(x)}">${Ve(x)}</button>`).join(""),I("#templates").innerHTML=Ht.map(x=>`<button type="button" class="card tpl-card" data-template="${x.id}" style="--accent:${x.accent}" data-family="${Ve(x.family)}">
-      <canvas class="tpl-preview" data-tpl-preview="${x.id}" width="216" height="384"></canvas>
-      <strong>${x.name}</strong><small>${x.what}<br><em>${x.bestFor}</em></small>
-      <span class="tpl-meta">\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044B: ${x.caption} \xB7 \u0413\u0440\u0430\u0444\u0438\u043A\u0430: ${x.graphic} \xB7 \u041C\u043E\u0443\u0448\u0435\u043D: ${x.motion}</span>
-    </button>`).join(""),I("#examples").innerHTML=di.map(x=>`<button type="button" class="card tpl-card" data-example="${x.id}">
-      <canvas class="tpl-preview" data-ex-preview="${x.id}" width="216" height="384"></canvas>
-      <strong>${x.name}</strong><small>${x.note}</small>
-    </button>`).join(""),requestAnimationFrame(()=>{ol(),Fl(),cl()}),I("#file").addEventListener("change",x=>ns(x.target.files?.[0]).catch(e=>{I("#status").textContent=e.message})),I("#build").addEventListener("click",nx),I("#export").addEventListener("click",sl),I("#asr").addEventListener("click",nl),I("#srt-load").addEventListener("click",()=>I("#srt").click()),I("#srt").addEventListener("change",x=>{let e=x.target.files?.[0];e&&e.text().then(r=>{let A=il(r).filter(i=>i.start<(E.duration||1/0));if(!A.length)throw new Error("\u0412 SRT \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E \u0444\u0440\u0430\u0437 \u0441 \u0442\u0430\u0439\u043C\u0438\u043D\u0433\u043E\u043C.");E.cues=A,E.excluded=new Set,I("#words").value=A.map(i=>i.text).join(`
-`),I("#status").textContent=`SRT \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D: ${A.length} \u0444\u0440\u0430\u0437.`,nx()}).catch(r=>{I("#status").textContent=r.message||"\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C SRT."})}),I("#cues").addEventListener("change",x=>{let e=x.target.dataset.cue;e&&(x.target.checked?E.excluded.delete(e):E.excluded.add(e),nx())}),I("#filters").addEventListener("click",x=>{let e=x.target.closest("[data-filter]");if(!e)return;let r=e.dataset.filter;document.querySelectorAll("[data-filter]").forEach(A=>A.classList.toggle("active",A===e)),document.querySelectorAll("[data-template]").forEach(A=>{A.style.display=r==="\u0412\u0441\u0435"||A.dataset.family.startsWith(r)?"":"none"})}),I("#templates").addEventListener("click",x=>{let e=x.target.closest("[data-template]");e&&(E.template=e.dataset.template,document.querySelectorAll("[data-template]").forEach(r=>r.classList.toggle("active",r===e)),nx())}),I("#examples").addEventListener("click",x=>{let e=x.target.closest("[data-example]");e&&fl(e.dataset.example)}),I("#add-scene").addEventListener("click",el),I("#scenes").addEventListener("change",x=>{let e=x.target.closest("[data-scene]");!e||!x.target.dataset.field||fF(e.dataset.scene,x.target.dataset.field,x.target.value)}),I("#scenes").addEventListener("click",x=>{let e=x.target.closest("[data-scene]");if(!e)return;let r=x.target.dataset.act;if(r==="delete")E.manualGraphics=E.manualGraphics.filter(A=>A.id!==e.dataset.scene);else if(r==="jump"){let A=E.manualGraphics.find(i=>i.id===e.dataset.scene);A&&(E.t=Math.min(E.edl.duration,A.at),I("#range").value=String(E.t))}nx()}),I("#save-project").addEventListener("click",rl),I("#open-project").addEventListener("click",()=>I("#project-file").click()),I("#project-file").addEventListener("change",x=>Al(x.target.files?.[0])),I("#approved").addEventListener("change",x=>{E.approved=x.target.checked,ui()}),I("#approval-list").addEventListener("click",x=>{let e=x.target.closest("[data-approval]");if(!e)return;let A=_r(E.edl)[Number(e.dataset.approval)];A&&lF(A.time)}),document.addEventListener("pointermove",tl),document.addEventListener("pointerup",oF),document.addEventListener("pointercancel",oF),I("#range").addEventListener("input",x=>{E.t=Number(x.target.value),E.video&&!E.playing&&E.edl&&(E.video.currentTime=Ut(E.edl,E.t)),ze()}),I("#play").addEventListener("click",()=>{if(!E.video||!E.edl)return;let x=E.video;if(E.playing)x.pause(),E.playing=!1,I("#play").innerHTML=`${z0("play",14)} \u0418\u0433\u0440\u0430\u0442\u044C`;else{x.currentTime=Ut(E.edl,E.t),x.play(),E.playing=!0,I("#play").innerHTML=`${z0("pause",14)} \u041F\u0430\u0443\u0437\u0430`;let e=()=>{if(!E.playing)return;let r=Ot(E.edl,x.currentTime);if(Math.abs(r-E.t)>.12&&(x.currentTime=Ut(E.edl,Math.min(E.edl.duration,E.t+1/30))),E.t=Math.max(0,Math.min(E.edl.duration,r)),I("#range").value=String(E.t),ze(),E.t>=E.edl.duration-.02){x.pause(),E.playing=!1,I("#play").innerHTML=`${z0("play",14)} \u0418\u0433\u0440\u0430\u0442\u044C`;return}requestAnimationFrame(e)};requestAnimationFrame(e)}}),document.querySelector('[data-template="clean"]')?.classList.add("active"),E.edl=le({output:{width:Pr,height:Ir,fps:30},clips:[{id:"main",src:"video",in:0,out:6}],captions:[{start:.4,end:5.6,text:"\u0417\u0430\u0433\u0440\u0443\u0437\u0438 \u0432\u0438\u0434\u0435\u043E, \u043D\u0430\u043F\u0438\u0448\u0438 \u0444\u0440\u0430\u0437\u044B \u0438 \u043D\u0430\u0436\u043C\u0438 \u043F\u0440\u0438\u0451\u043C",template:"clean"}],look:{preset:"clean",accent:"#ffd23f"}}),I("#range").max="6",As(),is(),ui(),ze()});})();
+`),document.querySelectorAll("[data-template]").forEach(e=>e.classList.toggle("active",e.dataset.template===x.template)),document.querySelectorAll("[data-example]").forEach(e=>e.classList.toggle("active",e.dataset.example===t)),I("#status").textContent=x.note,nx()}catch(e){I("#status").textContent=e?.message||"\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043E\u0442\u043A\u0440\u044B\u0442\u044C \u043F\u0440\u0438\u043C\u0435\u0440."}}document.addEventListener("DOMContentLoaded",()=>{aF(document);let t=!window.matchMedia("(prefers-reduced-motion: reduce)").matches;document.querySelectorAll("[data-goto]").forEach(e=>e.addEventListener("click",()=>{document.getElementById(e.dataset.goto)?.scrollIntoView({behavior:t?"smooth":"auto",block:"start"}),document.querySelectorAll("[data-goto]").forEach(r=>r.setAttribute("aria-pressed",String(r===e)))})),window.__kadr3=E;let x=["\u0412\u0441\u0435",...new Set(Ht.map(e=>e.family.split("\xB7")[0].trim()))];I("#filters").innerHTML=x.map((e,r)=>`<button type="button" class="filter${r===0?" active":""}" data-filter="${Ve(e)}">${Ve(e)}</button>`).join(""),I("#templates").innerHTML=Ht.map(e=>`<button type="button" class="card tpl-card" data-template="${e.id}" style="--accent:${e.accent}" data-family="${Ve(e.family)}">
+      <canvas class="tpl-preview" data-tpl-preview="${e.id}" width="216" height="384"></canvas>
+      <strong>${e.name}</strong><small>${e.what}<br><em>${e.bestFor}</em></small>
+      <span class="tpl-meta">\u0421\u0443\u0431\u0442\u0438\u0442\u0440\u044B: ${e.caption} \xB7 \u0413\u0440\u0430\u0444\u0438\u043A\u0430: ${e.graphic} \xB7 \u041C\u043E\u0443\u0448\u0435\u043D: ${e.motion}</span>
+    </button>`).join(""),I("#examples").innerHTML=di.map(e=>`<button type="button" class="card tpl-card" data-example="${e.id}">
+      <canvas class="tpl-preview" data-ex-preview="${e.id}" width="216" height="384"></canvas>
+      <strong>${e.name}</strong><small>${e.note}</small>
+    </button>`).join(""),requestAnimationFrame(()=>{ol(),Fl(),cl()}),I("#file").addEventListener("change",e=>ns(e.target.files?.[0]).catch(r=>{I("#status").textContent=r.message})),I("#build").addEventListener("click",nx),I("#export").addEventListener("click",sl),I("#asr").addEventListener("click",nl),I("#srt-load").addEventListener("click",()=>I("#srt").click()),I("#srt").addEventListener("change",e=>{let r=e.target.files?.[0];r&&r.text().then(A=>{let i=il(A).filter(n=>n.start<(E.duration||1/0));if(!i.length)throw new Error("\u0412 SRT \u043D\u0435 \u043D\u0430\u0439\u0434\u0435\u043D\u043E \u0444\u0440\u0430\u0437 \u0441 \u0442\u0430\u0439\u043C\u0438\u043D\u0433\u043E\u043C.");E.cues=i,E.excluded=new Set,I("#words").value=i.map(n=>n.text).join(`
+`),I("#status").textContent=`SRT \u0437\u0430\u0433\u0440\u0443\u0436\u0435\u043D: ${i.length} \u0444\u0440\u0430\u0437.`,nx()}).catch(A=>{I("#status").textContent=A.message||"\u041D\u0435 \u0443\u0434\u0430\u043B\u043E\u0441\u044C \u043F\u0440\u043E\u0447\u0438\u0442\u0430\u0442\u044C SRT."})}),I("#cues").addEventListener("change",e=>{let r=e.target.dataset.cue;r&&(e.target.checked?E.excluded.delete(r):E.excluded.add(r),nx())}),I("#filters").addEventListener("click",e=>{let r=e.target.closest("[data-filter]");if(!r)return;let A=r.dataset.filter;document.querySelectorAll("[data-filter]").forEach(i=>i.classList.toggle("active",i===r)),document.querySelectorAll("[data-template]").forEach(i=>{i.style.display=A==="\u0412\u0441\u0435"||i.dataset.family.startsWith(A)?"":"none"})}),I("#templates").addEventListener("click",e=>{let r=e.target.closest("[data-template]");r&&(E.template=r.dataset.template,document.querySelectorAll("[data-template]").forEach(A=>A.classList.toggle("active",A===r)),nx())}),I("#examples").addEventListener("click",e=>{let r=e.target.closest("[data-example]");r&&fl(r.dataset.example)}),I("#add-scene").addEventListener("click",el),I("#scenes").addEventListener("change",e=>{let r=e.target.closest("[data-scene]");!r||!e.target.dataset.field||fF(r.dataset.scene,e.target.dataset.field,e.target.value)}),I("#scenes").addEventListener("click",e=>{let r=e.target.closest("[data-scene]");if(!r)return;let A=e.target.dataset.act;if(A==="delete")E.manualGraphics=E.manualGraphics.filter(i=>i.id!==r.dataset.scene);else if(A==="jump"){let i=E.manualGraphics.find(n=>n.id===r.dataset.scene);i&&(E.t=Math.min(E.edl.duration,i.at),I("#range").value=String(E.t))}nx()}),I("#save-project").addEventListener("click",rl),I("#open-project").addEventListener("click",()=>I("#project-file").click()),I("#project-file").addEventListener("change",e=>Al(e.target.files?.[0])),I("#approved").addEventListener("change",e=>{E.approved=e.target.checked,ui()}),I("#approval-list").addEventListener("click",e=>{let r=e.target.closest("[data-approval]");if(!r)return;let i=_r(E.edl)[Number(r.dataset.approval)];i&&lF(i.time)}),document.addEventListener("pointermove",tl),document.addEventListener("pointerup",oF),document.addEventListener("pointercancel",oF),I("#range").addEventListener("input",e=>{E.t=Number(e.target.value),E.video&&!E.playing&&E.edl&&(E.video.currentTime=Ut(E.edl,E.t)),ze()}),I("#play").addEventListener("click",()=>{if(!E.video||!E.edl)return;let e=E.video;if(E.playing)e.pause(),E.playing=!1,I("#play").innerHTML=`${z0("play",14)} \u0418\u0433\u0440\u0430\u0442\u044C`;else{e.currentTime=Ut(E.edl,E.t),e.play(),E.playing=!0,I("#play").innerHTML=`${z0("pause",14)} \u041F\u0430\u0443\u0437\u0430`;let r=()=>{if(!E.playing)return;let A=Ot(E.edl,e.currentTime);if(Math.abs(A-E.t)>.12&&(e.currentTime=Ut(E.edl,Math.min(E.edl.duration,E.t+1/30))),E.t=Math.max(0,Math.min(E.edl.duration,A)),I("#range").value=String(E.t),ze(),E.t>=E.edl.duration-.02){e.pause(),E.playing=!1,I("#play").innerHTML=`${z0("play",14)} \u0418\u0433\u0440\u0430\u0442\u044C`;return}requestAnimationFrame(r)};requestAnimationFrame(r)}}),document.querySelector('[data-template="clean"]')?.classList.add("active"),E.edl=le({output:{width:Pr,height:Ir,fps:30},clips:[{id:"main",src:"video",in:0,out:6}],captions:[{start:.4,end:5.6,text:"\u0417\u0430\u0433\u0440\u0443\u0437\u0438 \u0432\u0438\u0434\u0435\u043E, \u043D\u0430\u043F\u0438\u0448\u0438 \u0444\u0440\u0430\u0437\u044B \u0438 \u043D\u0430\u0436\u043C\u0438 \u043F\u0440\u0438\u0451\u043C",template:"clean"}],look:{preset:"clean",accent:"#ffd23f"}}),I("#range").max="6",As(),is(),ui(),ze()});})();
 /*! Bundled license information:
 
 mediabunny/dist/modules/src/misc.js:

@@ -608,6 +608,11 @@ async function loadExample(id) {
 
 document.addEventListener("DOMContentLoaded", () => {
   hydrateIcons(document);
+  const smooth = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.querySelectorAll("[data-goto]").forEach(btn => btn.addEventListener("click", () => {
+    document.getElementById(btn.dataset.goto)?.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "start" });
+    document.querySelectorAll("[data-goto]").forEach(x => x.setAttribute("aria-pressed", String(x === btn)));
+  }));
   window.__kadr3 = state; // debugging / tests: живой EDL доступен из консоли
   const families = ["Все", ...new Set(KADR_TEMPLATES.map(t => t.family.split("·")[0].trim()))];
   $("#filters").innerHTML = families.map((name, i) =>

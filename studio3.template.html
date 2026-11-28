@@ -13,87 +13,103 @@
 <body>
   <div class="shell">
     <header>
-      <span class="brandmark">К</span>
-      <b>Кадр</b>
-      <span class="badge">Студия 3.0 · локально в браузере</span>
+      <span class="brandmark">К</span><b>Кадр</b><span class="sub">Студия 3.0</span>
+      <span class="badge">На твоём устройстве</span>
       <a class="badge badge-icon" href="https://github.com/IslamMol/kadr-web/releases/latest/download/kadr-desktop.zip"><span data-icon="download"></span> Windows</a>
     </header>
 
     <div class="grid">
       <section class="panel">
-        <label class="field-title"><span data-icon="upload"></span> Видео<input id="file" type="file" accept="video/*,.mov,.mp4,.webm,.mkv"></label>
-
-        <div class="row">
-          <label>Начало, сек<input id="in" type="number" min="0" step="0.1" value="0"></label>
-          <label>Конец, сек<input id="out" type="number" min="0.2" step="0.1" value="30"></label>
+        <div class="quick-start">
+          <strong>С видео до ролика — три шага</strong>
+          <span><b data-icon="upload"></b> Видео</span>
+          <span><b data-icon="captions"></b> Слова и сцены</span>
+          <span><b data-icon="sparkles"></b> Шаблон</span>
         </div>
 
-        <div class="row">
-          <label>Язык речи
-            <select id="language">
-              <option value="russian">Русский</option>
-              <option value="english">Английский</option>
-              <option value="auto">Определить</option>
-            </select>
+        <nav class="editor-tabs" aria-label="Шаги редактора">
+          <button type="button" data-goto="step-video" aria-pressed="true"><span data-icon="upload"></span> Видео</button>
+          <button type="button" data-goto="step-words" aria-pressed="false"><span data-icon="captions"></span> Слова</button>
+          <button type="button" data-goto="step-look" aria-pressed="false"><span data-icon="sparkles"></span> Вид</button>
+        </nav>
+
+        <div id="step-video" class="section-block">
+          <div class="sec-title"><span class="step-num">1</span><strong>Видео</strong></div>
+          <label class="source-box"><span data-icon="upload"></span> Выбрать видео
+            <input id="file" type="file" accept="video/*,.mov,.mp4,.webm,.mkv">
+            <small>MP4, MOV, WebM. Не подойдёт — предложим преобразовать.</small>
           </label>
-          <label class="action-label">&nbsp;<button id="asr"><span data-icon="mic"></span> Распознать речь</button></label>
+          <div class="row">
+            <label>Начало, сек<input id="in" type="number" min="0" step="0.1" value="0"></label>
+            <label>Конец, сек<input id="out" type="number" min="0.2" step="0.1" value="30"></label>
+          </div>
+          <div class="row">
+            <label>Язык речи
+              <select id="language">
+                <option value="russian">Русский</option>
+                <option value="english">Английский</option>
+                <option value="auto">Определить</option>
+              </select>
+            </label>
+            <label class="action-label">&nbsp;<button id="asr"><span data-icon="mic"></span> Распознать речь</button></label>
+          </div>
+          <input id="srt" type="file" accept=".srt,text/plain" hidden>
+          <button id="srt-load" class="small wide"><span data-icon="file"></span> Загрузить SRT</button>
         </div>
 
-        <input id="srt" type="file" accept=".srt,text/plain" hidden>
-        <button id="srt-load" class="small wide"><span data-icon="file"></span> Загрузить SRT</button>
-
-        <label>Фразы, каждую с новой строки<textarea id="words" placeholder="Маленький перерыв&#10;Для больших идей">Маленький перерыв
+        <div id="step-words" class="section-block">
+          <div class="sec-title"><span class="step-num">2</span><strong>Слова и сцены</strong></div>
+          <label>Фразы, каждую с новой строки<textarea id="words" placeholder="Маленький перерыв&#10;Для больших идей">Маленький перерыв
 Для больших идей</textarea></label>
-
-        <div id="cues" class="cue-list"></div>
-
-        <div>
+          <div id="cues" class="cue-list"></div>
           <p class="hint"><span data-icon="layers"></span> Сцены на таймлайне — перетащи плашку мышью</p>
           <div id="timeline" class="timeline"><span class="playhead"></span></div>
           <div id="scenes" class="scene-list"></div>
           <button id="add-scene" class="small wide"><span data-icon="plus"></span> Добавить сцену на текущем кадре</button>
         </div>
 
-        <div>
+        <div id="step-look" class="section-block">
+          <div class="sec-title"><span class="step-num">3</span><strong>Шаблон монтажа</strong></div>
           <p class="hint"><span data-icon="sparkles"></span> Живые превью показывают субтитры, сцену и движение. Нажми — применится всё сразу.</p>
           <div id="filters" class="filters"></div>
           <div id="templates" class="cards"></div>
-        </div>
-
-        <div>
-          <p class="hint"><span data-icon="eye"></span> Готовые примеры на встроенном видео</p>
+          <p class="hint spaced"><span data-icon="eye"></span> Готовые примеры на встроенном видео</p>
           <div id="examples" class="cards"></div>
+          <button id="build"><span data-icon="layers"></span> Собрать проект</button>
+          <div class="row">
+            <button id="save-project" class="small"><span data-icon="save"></span> Сохранить .kadr3</button>
+            <button id="open-project" class="small"><span data-icon="folder"></span> Открыть .kadr3</button>
+          </div>
+          <input id="project-file" type="file" accept=".kadr3,application/octet-stream" hidden>
         </div>
-
-        <button id="build"><span data-icon="layers"></span> Собрать проект</button>
-        <div class="row">
-          <button id="save-project" class="small"><span data-icon="save"></span> Сохранить .kadr3</button>
-          <button id="open-project" class="small"><span data-icon="folder"></span> Открыть .kadr3</button>
-        </div>
-
-        <input id="project-file" type="file" accept=".kadr3,application/octet-stream" hidden>
 
         <details id="approval-box" class="advanced-box">
           <summary>Лист проверки перед сборкой</summary>
           <div id="approval-list"></div>
           <div id="approval-warnings"></div>
         </details>
-
         <label class="voice-consent"><input id="approved" type="checkbox"><span>Я просмотрел(а) склейки и сцены из листа проверки.</span></label>
 
-        <button id="export" class="primary"><span data-icon="sparkles"></span> Собрать MP4</button>
-        <a id="download" class="download"><span data-icon="download"></span> Скачать MP4</a>
-        <div id="progress" class="progress"><span></span></div>
-        <p id="status" class="status"></p>
+        <div class="side-action">
+          <div class="export-settings"><span>Размер MP4</span><span class="badge">1080 × 1920 · 30 кадров/с</span></div>
+          <button id="export" class="primary"><span data-icon="sparkles"></span> Собрать MP4</button>
+          <a id="download" class="download"><span data-icon="download"></span> Скачать MP4</a>
+          <div id="progress" class="progress"><span></span></div>
+          <p id="status" class="status"></p>
+        </div>
       </section>
 
       <section class="stage">
+        <div class="stage-head"><strong><span data-icon="eye"></span> Предпросмотр</strong><span class="badge">9:16 · 1080 × 1920</span></div>
         <canvas id="canvas" width="1080" height="1920"></canvas>
-        <div class="transport">
-          <button id="play" class="small"><span data-icon="play"></span> Играть</button>
-          <input id="range" type="range" min="0" max="6" step="0.01" value="0" aria-label="Позиция воспроизведения">
+        <div class="stage-foot">
+          <div class="transport">
+            <button id="play" class="small"><span data-icon="play"></span> Играть</button>
+            <input id="range" type="range" min="0" max="6" step="0.01" value="0" aria-label="Позиция воспроизведения">
+          </div>
+          <span id="time" class="time"></span>
         </div>
-        <span id="time" class="hint time-readout"></span>
+        <p class="stage-note">Проверь лицо, субтитры и склейки перед сборкой.</p>
       </section>
     </div>
   </div>
