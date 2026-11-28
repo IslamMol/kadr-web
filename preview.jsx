@@ -80,5 +80,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   hydrateIcons(document);
   state.edls = IDS.map(id => makeEdl(templateById(id)));
   await loadFrames();
+  try { await document.fonts.load('800 28px "Kadr Manrope"'); await document.fonts.ready; } catch {}
   requestAnimationFrame(loop);
 });

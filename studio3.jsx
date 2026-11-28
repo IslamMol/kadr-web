@@ -749,6 +749,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   ).join("");
   requestAnimationFrame(async () => {
     await loadDemoFrames();
+    try { await document.fonts.load('800 14px "Kadr Manrope"'); await document.fonts.ready; } catch {}
     renderTemplatePreviews(); renderExamplePreviews(); startPreviewLoop();
   });
   $("#file").addEventListener("change", e => loadFile(e.target.files?.[0]).catch(err => { $("#status").textContent = err.message; }));

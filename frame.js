@@ -76,7 +76,7 @@ function drawCaption(ctx, cue, edl, state, palette) {
   const compact = W < 400;
   const size = compact ? Math.max(14, Math.round(W * 0.07)) : Math.max(28, Math.min(84, Math.round(W * 0.062)));
   font(ctx, size, template === "outline" ? 900 : 800);
-  const maxTextWidth = Math.round(W * (compact ? 0.64 : 0.84));
+  const maxTextWidth = Math.round(W * (compact ? 0.56 : 0.84));
   const rows = lines(ctx, cue.words, maxTextWidth, template);
   const lineHeight = size * 1.16;
   const baseY = Math.round(H * 0.79) - rows.length * lineHeight / 2;
@@ -111,7 +111,7 @@ function drawCaption(ctx, cue, edl, state, palette) {
       if (template === "outline") {
         ctx.lineWidth = Math.max(2, size * 0.07);
         ctx.strokeStyle = on ? palette.accent : "rgba(6,7,9,.9)";
-        if (typeof ctx.strokeText === "function") ctx.strokeText(shown, x, y);
+        if (typeof ctx.strokeText === "function") ctx.strokeText(shown, x, y, w.width);
       }
       const boxed = template === "highlighter" || template === "hype";
       ctx.fillStyle = on ? (boxed ? (lightLook ? "#ffffff" : palette.bg) : palette.accent) : (done ? ink : mutedInk);
@@ -119,7 +119,7 @@ function drawCaption(ctx, cue, edl, state, palette) {
         const p = 1 + 0.08 * ease((t - w.start) / 0.12);
         ctx.translate(x + w.width / 2, y); ctx.scale(p, p); ctx.translate(-x - w.width / 2, -y);
       }
-      ctx.fillText(shown, x, y);
+      ctx.fillText(shown, x, y, w.width);
       ctx.restore();
       x += w.width + 18;
     });
