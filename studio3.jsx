@@ -519,13 +519,14 @@ function renderTemplatePreviews() {
   for (const tpl of KADR_TEMPLATES) {
     const canvas = document.querySelector(`[data-tpl-preview="${tpl.id}"]`);
     if (!canvas) continue;
-    const words = tpl.sample.split(/\s+/).filter(Boolean);
+    // В превью держим короткие фразы: длинные образцы только переполняют 9:16-карточку.
+    const words = tpl.sample.split(/\s+/).filter(Boolean).slice(0, 2);
     const step = 1.2 / Math.max(1, words.length);
     const cues = [
-      { id: "a", start: 0.05, end: 1.25, text: tpl.sample, template: tpl.caption,
+      { id: "a", start: 0.05, end: 1.25, text: words.join(" "), template: tpl.caption,
         words: words.map((text, i) => ({ text, start: 0.05 + step * i, end: 0.05 + step * (i + 1) })) },
-      { id: "b", start: 1.3, end: 2.55, text: "39% идей в голову", template: tpl.caption,
-        words: [{ text: "39%", start: 1.3, end: 1.7 }, { text: "идей", start: 1.7, end: 2.1 }, { text: "в голову.", start: 2.1, end: 2.55 }] },
+      { id: "b", start: 1.3, end: 2.55, text: "39%", template: tpl.caption,
+        words: [{ text: "39%", start: 1.3, end: 2.55 }] },
     ];
     const edl = previewEdl(tpl, cues);
     registerPreview(tpl.id, canvas, edl, Math.min(1.7, (edl.graphics[0]?.at || 0.5) + 0.12));

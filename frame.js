@@ -73,15 +73,18 @@ function drawCaption(ctx, cue, edl, state, palette) {
   if (!state.reducedMotion && state.motion?.type === "word-slam") {
     motionScale = 1 + 0.22 * (1 - ease((t - state.motion.at) / state.motion.duration));
   }
-  const size = Math.max(22, Math.min(84, Math.round(W * 0.062)));
+  const compact = W < 400;
+  const size = compact ? Math.max(14, Math.round(W * 0.07)) : Math.max(28, Math.min(84, Math.round(W * 0.062)));
   font(ctx, size, template === "outline" ? 900 : 800);
-  const rows = lines(ctx, cue.words, W - 150, template);
+  const maxTextWidth = Math.round(W * (compact ? 0.64 : 0.84));
+  const rows = lines(ctx, cue.words, maxTextWidth, template);
   const lineHeight = size * 1.16;
   const baseY = Math.round(H * 0.79) - rows.length * lineHeight / 2;
   const lightLook = ["paper", "halftone", "magazine"].includes(edl.look.preset);
   const ink = lightLook ? "#17181d" : palette.fg;
   const mutedInk = lightLook ? "#4b4b4b" : palette.muted;
-  rr(ctx, 48, baseY - 26, W - 96, rows.length * lineHeight + 52, 22,
+  const bandPad = Math.round(W * 0.045);
+  rr(ctx, bandPad, baseY - 26, W - bandPad * 2, rows.length * lineHeight + 52, 22,
      lightLook ? "rgba(255,255,255,.74)" : "rgba(8,10,14,.58)");
   ctx.save();
   ctx.textBaseline = "middle";
