@@ -25,6 +25,7 @@ const state = {
   cues: null, excluded: new Set(), asrBusy: false, asrWorker: null,
   manualGraphics: [], approved: false, drag: null,
   cutDeltas: {}, originalBounds: [], snapPoints: [],
+  previewEdls: {}, previewVisible: new Set(), previewTimer: 0,
 };
 
 function coverDraw(ctx, video, x, y, w, h) {
@@ -490,10 +491,12 @@ function previewSource(ctx, rect) {
   ctx.fillRect(rect.x, rect.y + rect.h * .12, rect.w, 2);
 }
 
+let previewStart = 0;
+
 function previewEdl(tpl, cues) {
   const grain = ["cinematic", "halftone", "ink", "graph"].includes(tpl.look) ? 0.12 : 0.04;
   return normalizeEdl({
-    output: { width: 540, height: 960, fps: 30 },
+    output: { width: 216, height: 384, fps: 30 },
     clips: [{ id: "preview", src: "video", in: 0, out: 2.6 }],
     captions: cues.map(c => ({ ...c, template: tpl.caption })),
     graphics: planBeats(cues, tpl.id),
@@ -503,14 +506,13 @@ function previewEdl(tpl, cues) {
 
 function drawPreview(canvas, edl, t) {
   if (!canvas) return;
-  try {
-    const off = document.createElement("canvas");
-    off.width = edl.output.width; off.height = edl.output.height;
-    renderFrame(off.getContext("2d"), edl, t, { video: { draw: previewSource } });
-    const ctx = canvas.getContext("2d");
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(off, 0, 0, canvas.width, canvas.height);
-  } catch {}
+  try { renderFrame(canvas.getContext("2d"), edl, t, { video: { draw: previewSource } }); } catch {}
+}
+
+function registerPreview(key, canvas, edl, stillT) {
+  if (!canvas) return;
+  state.previewEdls[key] = { canvas, edl, t: stillT };
+  drawPreview(canvas, edl, stillT);
 }
 
 function renderTemplatePreviews() {
@@ -526,7 +528,7 @@ function renderTemplatePreviews() {
         words: [{ text: "39%", start: 1.15, end: 1.45 }, { text: "идей", start: 1.45, end: 1.8 }, { text: "в голову.", start: 1.8, end: 2.2 }] },
     ];
     const edl = previewEdl(tpl, cues);
-    drawPreview(canvas, edl, Math.min(1.7, (edl.graphics[0]?.at || 0.5) + 0.12));
+    registerPreview(tpl.id, canvas, edl, Math.min(1.7, (edl.graphics[0]?.at || 0.5) + 0.12));
   }
 }
 
@@ -536,8 +538,49 @@ function renderExamplePreviews() {
     if (!canvas) continue;
     const tpl = templateById(ex.template);
     const edl = previewEdl(tpl, ex.cues);
-    drawPreview(canvas, edl, 1.35);
+    registerPreview(`ex:${ex.id}`, canvas, edl, 1.35);
   }
+}
+
+// Один общий rAF для карточек, которые реально видны на экране.
+function startPreviewLoop() {
+  if (state.previewTimer) cancelAnimationFrame(state.previewTimer);
+  const canvases = [...document.querySelectorAll("[data-tpl-preview],[data-ex-preview]")];
+  const keyOf = el => el.dataset.tplPreview ? el.dataset.tplPreview : `ex:${el.dataset.exPreview}`;
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduced) {
+    canvases.forEach(el => {
+      const p = state.previewEdls[keyOf(el)];
+      if (p) drawPreview(p.canvas, p.edl, p.t);
+    });
+    return;
+  }
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver(entries => {
+      for (const entry of entries) {
+        const key = keyOf(entry.target);
+        if (entry.isIntersecting) state.previewVisible.add(key);
+        else state.previewVisible.delete(key);
+      }
+    }, { rootMargin: "160px" });
+    canvases.forEach(el => io.observe(el));
+  } else canvases.forEach(el => state.previewVisible.add(keyOf(el)));
+
+  previewStart = performance.now();
+  let lastDraw = 0;
+  const loop = (now) => {
+    state.previewTimer = requestAnimationFrame(loop);
+    if (document.hidden || now - lastDraw < 66) return;
+    lastDraw = now;
+    const elapsed = (now - previewStart) / 1000;
+    for (const key of state.previewVisible) {
+      const p = state.previewEdls[key];
+      if (!p) continue;
+      const dur = Math.max(0.1, p.edl.duration);
+      drawPreview(p.canvas, p.edl, ((elapsed % dur) + dur) % dur);
+    }
+  };
+  state.previewTimer = requestAnimationFrame(loop);
 }
 
 async function loadExample(id) {
@@ -574,6 +617,7 @@ document.addEventListener("DOMContentLoaded", () => {
     `<button type="button" class="card tpl-card" data-template="${t.id}" style="--accent:${t.accent}" data-family="${esc(t.family)}">
       <canvas class="tpl-preview" data-tpl-preview="${t.id}" width="216" height="384"></canvas>
       <strong>${t.name}</strong><small>${t.what}<br><em>${t.bestFor}</em></small>
+      <span class="tpl-meta">Субтитры: ${t.caption} · Графика: ${t.graphic} · Моушен: ${t.motion}</span>
     </button>`
   ).join("");
   $("#examples").innerHTML = KADR_EXAMPLES.map(e =>
@@ -582,7 +626,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <strong>${e.name}</strong><small>${e.note}</small>
     </button>`
   ).join("");
-  requestAnimationFrame(() => { renderTemplatePreviews(); renderExamplePreviews(); });
+  requestAnimationFrame(() => { renderTemplatePreviews(); renderExamplePreviews(); startPreviewLoop(); });
   $("#file").addEventListener("change", e => loadFile(e.target.files?.[0]).catch(err => { $("#status").textContent = err.message; }));
   $("#build").addEventListener("click", buildEdl);
   $("#export").addEventListener("click", exportMp4);
