@@ -64,9 +64,10 @@ function drawGraphic(ctx, tpl, W, H, p, progress) {
   const rowW = W - pad * 2;
   const top = Math.round(H * 0.15);
   const accent = tpl.accent;
-  const label = String(tpl.sample || tpl.name).trim().split(/\s+/).slice(0, 2).join(" ").slice(0, 14);
+  // Подпись сцены берём из названия шаблона, чтобы не дублировать субтитры.
+  const label = String(tpl.name || tpl.sample).trim().split(/\s+/).slice(0, 2).join(" ").slice(0, 14);
   ctx.save();
-  ctx.globalAlpha = 0.35 + 0.65 * ease(progress);
+  ctx.globalAlpha = 0.82 + 0.18 * ease(progress);
 
   if (tpl.graphic === "number" || tpl.graphic === "stats") {
     font(ctx, W * 0.14, 900); ctx.fillStyle = accent; ctx.textAlign = "left"; ctx.textBaseline = "top";
@@ -102,7 +103,7 @@ function drawGraphic(ctx, tpl, W, H, p, progress) {
     font(ctx, W * 0.052, 800); ctx.fillStyle = "#ffffff"; ctx.textAlign = "left"; ctx.textBaseline = "top";
     ctx.fillText(label, pad + 14, top + 22, rowW - 28);
     font(ctx, W * 0.04, 600); ctx.fillStyle = "rgba(255,255,255,.72)";
-    ctx.fillText("01 → 02 → 03", pad + 14, top + W * 0.13, rowW - 28);
+    ctx.fillText("01 → 02 → 03", pad + 14, top + W * 0.22, rowW - 28);
   } else {
     rr(ctx, pad, top, rowW, H * 0.18, 16, "rgba(255,255,255,.12)");
     font(ctx, W * 0.06, 900); ctx.fillStyle = accent; ctx.textAlign = "center"; ctx.textBaseline = "middle";
