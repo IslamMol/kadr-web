@@ -1,20 +1,16 @@
 {
-  "name": "kadr-video-editor",
-  "version": "2.0.0",
+  "name": "kadr-studio",
+  "version": "3.0.1",
   "private": true,
   "scripts": {
-    "build": "esbuild app.jsx --bundle --minify --format=iife --platform=browser --loader:.txt=text --outfile=bundle.js && esbuild studio3.jsx --bundle --minify --format=iife --platform=browser --outfile=studio3-bundle.js && esbuild preview.jsx --bundle --minify --format=iife --platform=browser --outfile=preview-bundle.js && node tools/build-auto.mjs",
-    "build:full": "esbuild app.jsx --bundle --minify --format=iife --platform=browser --loader:.txt=text --outfile=bundle.js && esbuild studio3.jsx --bundle --minify --format=iife --platform=browser --outfile=studio3-bundle.js && esbuild preview.jsx --bundle --minify --format=iife --platform=browser --outfile=preview-bundle.js && python build.py",
+    "build": "esbuild studio3.jsx --bundle --minify --format=iife --platform=browser --outfile=studio3-bundle.js && esbuild preview.jsx --bundle --minify --format=iife --platform=browser --outfile=preview-bundle.js && node tools/build-auto.mjs",
+    "build:full": "esbuild studio3.jsx --bundle --minify --format=iife --platform=browser --outfile=studio3-bundle.js && esbuild preview.jsx --bundle --minify --format=iife --platform=browser --outfile=preview-bundle.js && python build.py",
     "build:cloudflare": "node tools/build-cloudflare.mjs",
-    "test": "esbuild quality.js --bundle --platform=node --format=cjs --outfile=quality-test-bundle.cjs && node test-quality.cjs && esbuild voice.js --bundle --platform=node --format=cjs --outfile=voice-test-bundle.cjs && esbuild local-tts.js --bundle --platform=node --format=cjs --loader:.txt=text --outfile=tts-test-bundle.cjs && node test-voice-unit.cjs && esbuild project.js --bundle --platform=node --format=cjs --outfile=project-test-bundle.cjs && node test-project.cjs && esbuild beat.js --bundle --platform=node --format=cjs --outfile=beat-test-bundle.cjs && node test-beat.cjs && esbuild visuals.js --bundle --platform=node --format=cjs --outfile=motion-test-bundle.cjs && node test-motion.cjs && esbuild ghost.js --bundle --platform=node --format=cjs --outfile=ghost-bundle.cjs && node test-ghost.cjs && node test-takes.mjs && node test-edl.mjs && node test-frame.mjs && node test-templates.mjs && node test-project3.mjs && node test-approval.mjs && node test-snap.mjs && node test-hyper.mjs && node test-silence.mjs && node test-talking-head.mjs"
+    "test": "esbuild ghost.js --bundle --platform=node --format=cjs --outfile=ghost-bundle.cjs && node test-ghost.cjs && node test-takes.mjs && node test-edl.mjs && node test-frame.mjs && node test-templates.mjs && node test-project3.mjs && node test-approval.mjs && node test-snap.mjs && node test-hyper.mjs && node test-silence.mjs && node test-talking-head.mjs"
   },
   "dependencies": {
-    "@ffmpeg/core": "0.12.10",
     "@mediabunny/aac-encoder": "1.42.0",
-    "mediabunny": "1.42.0",
-    "react": "19.3.1",
-    "react-dom": "19.3.1",
-    "react-icons": "5.7.0"
+    "mediabunny": "1.42.0"
   },
   "devDependencies": {
     "@napi-rs/canvas": "^1.2.1",

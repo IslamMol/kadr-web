@@ -1,6 +1,6 @@
-// Кадр 3.0: подготовка папки site для Cloudflare Pages без Python и без Windows.
-// Используется как build command в Cloudflare: node tools/build-cloudflare.mjs
-import { mkdir, copyFile, access, rm, writeFile } from "node:fs/promises";
+// Кадр 3.0: подготовка site/ для Cloudflare Pages. Только новая студия.
+import { mkdir, copyFile, access, rm, writeFile, cp, readFile } from "node:fs/promises";
+import { createHash } from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -8,41 +8,25 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const site = path.join(root, "site");
 await mkdir(site, { recursive: true });
 
-const copyIfExists = async (from, to) => {
-  const src = path.join(root, from), dst = path.join(site, to);
-  try { await access(src); await copyFile(src, dst); return true; } catch { return false; }
-};
+const studio = await readFile(path.join(root, "studio3.html"), "utf8");
+const preview = await readFile(path.join(root, "preview.html"), "utf8");
+await writeFile(path.join(site, "index.html"), studio, "utf8");
+await writeFile(path.join(site, "studio3.html"), studio, "utf8");
+await writeFile(path.join(site, "preview.html"), preview, "utf8");
 
-// Уже собранные HTML-файлы хранятся в репозитории — сборка JS не нужна.
-const copies = [
-  ["kadr.html", "kadr.html"],
-  ["studio3.html", "studio3.html"],
-  ["preview.html", "preview.html"],
-  ["preview-cover.png", "preview-cover.png"],
-  ["demo-portrait.mp4", "demo-portrait.mp4"],
-  ["manifest.webmanifest", "manifest.webmanifest"],
-];
-for (const [from, to] of copies) if (!(await copyIfExists(from, to))) throw new Error(`Нет файла ${from}`);
-
-// Корень сайта — новая студия. Старый редактор остаётся по /kadr.html.
-await writeFile(path.join(site, "index.html"),
-  '<!doctype html><html lang="ru"><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=./studio3.html"><title>Кадр 3.0</title></head><body><p>Открываем студию… <a href="./studio3.html">Кадр 3.0</a></p><script>location.replace("./studio3.html")</script></body></html>',
-  "utf8");
-
-const required = [
-  "site/index.html", "site/studio3.html", "site/preview.html",
-  "site/preview-cover.png", "site/demo-portrait.mp4",
-  "site/manifest.webmanifest", "site/sw.js",
-  "site/converter/ffmpeg-core.part1", "site/converter/ffmpeg-core.part2",
-  "site/converter/ffmpeg-core.part3", "site/converter/ffmpeg-core.part4",
-];
-for (const rel of required) {
-  try { await access(path.join(root, rel)); }
-  catch { throw new Error(`Cloudflare: отсутствует ${rel}`); }
+for (const name of ["preview-cover.png", "demo-portrait.mp4", "manifest.webmanifest"]) {
+  await copyFile(path.join(root, name), path.join(site, name));
 }
+await cp(path.join(root, "icons"), path.join(site, "icons"), { recursive: true, force: true });
 
-// Архив Windows лежит на GitHub Releases, в Pages он не нужен и слишком велик.
-await rm(path.join(site, "desktop", "kadr-desktop.zip"), { force: true });
+const version = createHash("sha256").update(studio).digest("hex").slice(0, 16);
+const swTemplate = await readFile(path.join(root, "sw-template.js"), "utf8");
+await writeFile(path.join(site, "sw.js"), swTemplate.replaceAll("__VERSION__", version), "utf8");
+await writeFile(path.join(site, ".nojekyll"), "", "utf8");
 
-console.log("Cloudflare Pages output ready:", path.relative(root, site));
-console.log("Files checked:", required.length);
+for (const old of ["kadr.html", "LICENSES.txt"]) await rm(path.join(site, old), { force: true });
+for (const folder of ["converter", "source", "desktop"]) await rm(path.join(site, folder), { recursive: true, force: true });
+
+const required = ["index.html", "studio3.html", "preview.html", "preview-cover.png", "demo-portrait.mp4", "manifest.webmanifest", "sw.js", "icons/icon-192.png"];
+for (const rel of required) await access(path.join(site, rel));
+console.log("Cloudflare output ready: site/ (only Кадр 3.0)");
