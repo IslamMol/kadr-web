@@ -15,7 +15,7 @@ const pick = (v, allowed, fallback) => allowed.includes(v) ? v : fallback;
 const arr = (v, max) => Array.isArray(v) ? v.slice(0, max) : [];
 
 export const LOOKS = Object.freeze(["clean", "editorial", "kinetic", "cinematic", "launch", "magazine", "paper", "news", "ink", "halftone", "board", "graph"]);
-export const CAPTION_TEMPLATES = Object.freeze(["clean", "karaoke", "highlighter", "outline", "pop", "blur", "line-focus", "neominimal", "hype"]);
+export const CAPTION_TEMPLATES = Object.freeze(["clean", "karaoke", "highlighter", "outline", "pop", "blur", "line-focus", "neominimal", "hype", "upper"]);
 export const GRAPHIC_TYPES = Object.freeze(["quote", "number", "diagram", "chip", "lower-third", "stamp", "title", "stats", "list", "strike", "behind", "endcard", "card", "ui", "hook", "cta", "glass", "morph"]);
 export const MOTION_TYPES = Object.freeze(["none", "rise", "word-slam", "spring", "scramble"]);
 export const TRANSITIONS = Object.freeze(["none", "dissolve", "flash", "wipe", "iris"]);

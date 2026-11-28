@@ -615,7 +615,8 @@ function previewEdl(tpl, cues) {
     output: { width: 216, height: 384, fps: 30 },
     clips: [{ id: "preview", src: "video", in: 0, out: 2.6 }],
     captions: cues.map(c => ({ ...c, template: tpl.caption })),
-    graphics: planBeats(cues, tpl.id),
+    graphics: [{ id: "preview-beat", type: tpl.graphic, at: 1.32, duration: 1.0,
+      label: cues[0]?.text || tpl.sample, value: "", steps: [], template: tpl.caption }],
     look: { preset: tpl.look, accent: tpl.accent, grain, vignette: 0.18 },
   });
 }

@@ -31,7 +31,8 @@ function makeEdl(tpl) {
     output: { width: W, height: H, fps: 30 },
     clips: [{ id: "demo", src: "video", in: 0, out: SHOT }],
     captions: cues,
-    graphics: planBeats(cues, tpl.id),
+    graphics: [{ id: "mashup-beat", type: tpl.graphic, at: 1.32, duration: 1.0,
+      label: cues[0]?.text || tpl.sample, value: "", steps: [], template: tpl.caption }],
     look: { preset: tpl.look, accent: tpl.accent, grain, vignette: 0.18 },
   });
 }

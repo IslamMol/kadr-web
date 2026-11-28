@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { LOOKS, CAPTION_TEMPLATES, GRAPHIC_TYPES, MOTION_TYPES, normalizeEdl } from "./edl.js";
 import { KADR_TEMPLATES, KADR_EXAMPLES, templateById, planBeats } from "./templates.js";
 
-assert.equal(KADR_TEMPLATES.length, 26, "26 шаблонов из ghost-editor, EasyReels, herk, animate и др.");
+assert.equal(KADR_TEMPLATES.length, 25, "25 уникальных шаблонов без дублей");
 for (const t of KADR_TEMPLATES) {
   assert.ok(LOOKS.includes(t.look), `${t.id}: look ${t.look} реален`);
   assert.ok(CAPTION_TEMPLATES.includes(t.caption), `${t.id}: caption ${t.caption} реален`);
@@ -10,6 +10,10 @@ for (const t of KADR_TEMPLATES) {
   assert.ok(t.maxBeats >= 1 && t.maxBeats <= 6);
   assert.equal(templateById(t.id).name, t.name);
 }
+const signatures = KADR_TEMPLATES.map(t => `${t.caption}|${t.look}|${t.graphic}|${t.motion}`);
+assert.equal(new Set(signatures).size, signatures.length, "у каждого шаблона своя визуальная сигнатура");
+const ids = KADR_TEMPLATES.map(t => t.id);
+assert.equal(new Set(ids).size, ids.length, "id шаблонов не повторяются");
 
 for (const ex of KADR_EXAMPLES) {
   const t = templateById(ex.template);

@@ -24,7 +24,7 @@ export const KADR_TEMPLATES = [
    caption:"karaoke", look:"magazine", accent:"#ffd166", graphic:"chip", motion:"spring", maxBeats:3,
    what:"Обводка, чипсы, реакция рядом с лицом, мягкий хаос.", sample:"реакция крупным планом"},
   {id:"pop", name:"Журнал", family:"ghost-editor · preset", bestFor:"личный бренд, смелое утверждение",
-   caption:"pop", look:"magazine", accent:"#ff2e88", graphic:"behind", motion:"word-slam", maxBeats:2,
+   caption:"upper", look:"magazine", accent:"#ff2e88", graphic:"behind", motion:"word-slam", maxBeats:2,
    what:"ЗАГЛАВНЫЕ, цветной блок, слово плашет за говорящим.", sample:"БОЛЬШОЕ СЛОВО"},
 
   // Recipes ghost-editor (записаны как системы, не логотипы)
@@ -55,9 +55,6 @@ export const KADR_TEMPLATES = [
   {id:"halftone", name:"Halftone Dossier", family:"ghost-editor · recipe", bestFor:"дело, миф, разбор",
    caption:"outline", look:"halftone", accent:"#e7c27a", graphic:"stamp", motion:"scramble", maxBeats:3,
    what:"Кремовая бумага, точки, штамп, архивная карточка.", sample:"CASE FILE"},
-  {id:"product-launch", name:"Product launch", family:"product-launch-motion", bestFor:"демо сайта или продукта",
-   caption:"outline", look:"launch", accent:"#7c5cff", graphic:"ui", motion:"scramble", maxBeats:3,
-   what:"Один экран morph-ing в следующий: кнопка → загрузка → результат.", sample:"GET STARTED"},
   {id:"board-face", name:"Board + face", family:"EasyReels · idea", bestFor:"говорящая голова + плашка",
    caption:"karaoke", look:"board", accent:"#5ce1a6", graphic:"lower-third", motion:"rise", maxBeats:2,
    what:"Тёмная доска, зелёные метки, имя и CTA рядом с лицом.", sample:"ЭТО Я"},
@@ -81,7 +78,7 @@ export const KADR_TEMPLATES = [
    caption:"outline", look:"launch", accent:"#7c5cff", graphic:"morph", motion:"spring", maxBeats:3,
    what:"Одна форма меняет размер и радиус, не разрезая кадр.", sample:"GET STARTED"},
   {id:"animate-riso", name:"Riso print", family:"animate · style", bestFor:"тёплый принт, объяснение",
-   caption:"outline", look:"halftone", accent:"#c2703a", graphic:"stamp", motion:"scramble", maxBeats:2,
+   caption:"line-focus", look:"halftone", accent:"#c2703a", graphic:"stamp", motion:"scramble", maxBeats:2,
    what:"Три краски, оверпринт, лёгкое смещение плашек.", sample:"RISO"},
   {id:"animate-cut", name:"Cut paper", family:"animate · style", bestFor:"история, хроника, рассказ",
    caption:"highlighter", look:"paper", accent:"#d13f34", graphic:"card", motion:"rise", maxBeats:3,
