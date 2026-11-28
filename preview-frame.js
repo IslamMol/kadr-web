@@ -1,3 +1,5 @@
+import { drawTalkingHead } from "./talking-head.js";
+
 // Кадр 3.0: отдельный safely-bounded рендер для превью шаблонов.
 // Он НЕ участвует в экспорте — только показывает систему шаблона в 9:16.
 // Каждая строка рисуется с maxWidth, поэтому текст не может вылезти за кадр.
@@ -37,9 +39,7 @@ function drawFrame(ctx, frame, W, H) {
     ctx.drawImage(frame, (W - w) / 2, (H - h) / 2, w, h);
     return;
   }
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, "#3b5364"); g.addColorStop(1, "#101821");
-  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  drawTalkingHead(ctx, W, H, 0);
 }
 
 function drawLook(ctx, tpl, W, H, frameIndex) {
@@ -62,9 +62,9 @@ function drawLook(ctx, tpl, W, H, frameIndex) {
 function drawGraphic(ctx, tpl, W, H, p, progress) {
   const pad = Math.round(W * 0.08);
   const rowW = W - pad * 2;
-  const top = Math.round(H * 0.24);
+  const top = Math.round(H * 0.15);
   const accent = tpl.accent;
-  const label = String(tpl.sample || tpl.name).slice(0, 18);
+  const label = String(tpl.sample || tpl.name).trim().split(/\s+/).slice(0, 2).join(" ").slice(0, 14);
   ctx.save();
   ctx.globalAlpha = 0.35 + 0.65 * ease(progress);
 
@@ -95,7 +95,7 @@ function drawGraphic(ctx, tpl, W, H, p, progress) {
     font(ctx, W * 0.13 * (0.85 + 0.15 * ease(progress)), 900);
     ctx.globalAlpha *= 0.55; ctx.fillStyle = accent;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(label.toUpperCase(), W / 2, H * 0.42, rowW);
+    ctx.fillText(label.toUpperCase(), W / 2, H * 0.30, rowW);
   } else if (tpl.graphic === "ui" || tpl.graphic === "glass") {
     rr(ctx, pad, top, rowW, H * 0.28, 18, tpl.graphic === "ui" ? "rgba(10,12,18,.94)" : "rgba(255,255,255,.16)");
     ctx.fillStyle = accent; ctx.fillRect(pad, top, rowW, Math.max(3, W * 0.008));
@@ -119,8 +119,8 @@ function drawCaption(ctx, tpl, W, H, activeIndex) {
   rr(ctx, pad, y, W - pad * 2, h, 16, "rgba(8,10,14,.68)");
   font(ctx, W * 0.062, 800);
   ctx.fillStyle = "#ffffff"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  const words = text.split(/\s+/).filter(Boolean);
-  const lines = wrap(ctx, words.length ? words[Math.min(activeIndex, words.length - 1)] : text, W - pad * 2 - 20, 2);
+  const words = text.split(/\s+/).filter(Boolean).slice(0, 2);
+  const lines = wrap(ctx, words.join(" ") || text, W - pad * 2 - 20, 2);
   lines.forEach((line, i) => ctx.fillText(line, W / 2, y + h / 2 + (i - (lines.length - 1) / 2) * W * 0.075, W - pad * 2 - 20));
 }
 

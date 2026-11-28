@@ -79,7 +79,7 @@ function drawCaption(ctx, cue, edl, state, palette) {
   const maxTextWidth = Math.round(W * (compact ? 0.56 : 0.84));
   const rows = lines(ctx, cue.words, maxTextWidth, template);
   const lineHeight = size * 1.16;
-  const baseY = Math.round(H * 0.79) - rows.length * lineHeight / 2;
+  const baseY = Math.round(H * 0.85) - rows.length * lineHeight / 2;
   const lightLook = ["paper", "halftone", "magazine"].includes(edl.look.preset);
   const ink = lightLook ? "#17181d" : palette.fg;
   const mutedInk = lightLook ? "#4b4b4b" : palette.muted;
@@ -174,11 +174,11 @@ function drawGraphic(ctx, g, edl, state, palette) {
     ctx.fillStyle = accent; ctx.textAlign = "center"; ctx.textBaseline = "middle";
     ctx.fillText(g.label.slice(0, 48), W / 2, H * 0.24 + 90, boxW - 50);
   } else if (g.type === "lower-third") {
-    rr(ctx, pad, H * 0.70, boxW, 150, 16, "rgba(8,9,11,.86)");
-    ctx.fillStyle = accent; ctx.fillRect(pad, H * 0.70, 8, 150);
+    rr(ctx, pad, H * 0.64, boxW, 130, 16, "rgba(8,9,11,.86)");
+    ctx.fillStyle = accent; ctx.fillRect(pad, H * 0.64, 8, 130);
     font(ctx, Math.round(W * 0.043), 800);
     ctx.fillStyle = palette.fg; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-    ctx.fillText(g.label.slice(0, 70), pad + 30, H * 0.70 + 75, boxW - 60);
+    ctx.fillText(g.label.slice(0, 70), pad + 30, H * 0.64 + 65, boxW - 60);
   } else if (g.type === "stamp") {
     font(ctx, Math.round(W * 0.085), 900);
     ctx.fillStyle = accent; ctx.textAlign = "center"; ctx.textBaseline = "middle";
@@ -263,14 +263,16 @@ function drawGraphic(ctx, g, edl, state, palette) {
     ctx.fillText(g.label.slice(0, 28).toUpperCase(), W / 2, H * 0.16 + 75, boxW - 40);
     ctx.fillStyle = palette.fg; ctx.fillRect(W / 2 - 70, H * 0.16 + 148, 140, 5);
   } else if (g.type === "cta") {
-    rr(ctx, pad, H * 0.62, boxW, 360, 28, "rgba(8,10,14,.9)");
-    font(ctx, Math.round(W * 0.062), 900); ctx.fillStyle = palette.fg;
+    const ctaTop = H * 0.52, ctaH = H * 0.20, btnW = boxW * 0.78, btnH = 54;
+    rr(ctx, pad, ctaTop, boxW, ctaH, 24, "rgba(8,10,14,.9)");
+    font(ctx, Math.round(W * 0.052), 900); ctx.fillStyle = palette.fg;
     ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillText(g.label.slice(0, 36), W / 2, H * 0.70, boxW - 60);
-    (g.steps.length ? g.steps : ["ПОДПИШИСЬ"]).slice(0, 3).forEach((s, i) => {
-      rr(ctx, W / 2 - 220, H * 0.78 + i * 78, 440, 60, 30, i === 0 ? accent : "rgba(255,255,255,.16)");
-      font(ctx, 28, 800); ctx.fillStyle = i === 0 ? palette.bg : palette.fg;
-      ctx.fillText(s.slice(0, 28), W / 2, H * 0.78 + i * 78 + 30, 400);
+    ctx.fillText(g.label.slice(0, 36), W / 2, ctaTop + ctaH * 0.28, boxW - 50);
+    (g.steps.length ? g.steps : ["ПОДПИШИСЬ"]).slice(0, 2).forEach((s, i) => {
+      const y = ctaTop + ctaH * 0.48 + i * (btnH + 10);
+      rr(ctx, W / 2 - btnW / 2, y, btnW, btnH, 27, i === 0 ? accent : "rgba(255,255,255,.16)");
+      font(ctx, Math.round(W * 0.026), 800); ctx.fillStyle = i === 0 ? palette.bg : palette.fg;
+      ctx.fillText(s.slice(0, 28), W / 2, y + btnH / 2, btnW - 20);
     });
   } else if (g.type === "glass") {
     rr(ctx, pad, H * 0.26, boxW, 430, 30, "rgba(255,255,255,.13)");

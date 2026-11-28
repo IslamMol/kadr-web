@@ -106,24 +106,26 @@ function pickBeat(cue, tpl) {
 export function planBeats(cues = [], templateId = "clean") {
   const tpl = templateById(templateId);
   const out = [];
-  let last = -2;
+  let lastEnd = -2;
   for (const cue of cues) {
     if (out.length >= tpl.maxBeats) break;
     if (!(cue.end > cue.start)) continue;
-    const at = cue.start + Math.min(0.35, (cue.end - cue.start) * 0.15);
-    if (at - last < 1.2) continue;
+    const at = Math.max(cue.start + Math.min(0.3, (cue.end - cue.start) * 0.12), lastEnd + 0.2);
+    if (at >= cue.end - 0.4) continue;
+    const duration = Math.min(2.2, cue.end - at);
+    if (duration < 0.6) continue;
     const beat = pickBeat(cue, tpl);
     const text = String(cue.text || "").trim();
     const pieces = text.split(/[,;]|\s+-\s+/).map(s => s.trim()).filter(Boolean);
     const item = {
       id: `beat-${out.length + 1}`, type: beat.type, at,
-      duration: Math.min(2.8, Math.max(0.9, cue.end - cue.start)),
+      duration,
       label: text.slice(0, 70), value: String(beat.value || "").slice(0, 30),
       steps: pieces.length > 1 ? pieces.slice(0, 5) : [text.slice(0, 50)],
       template: tpl.caption,
     };
     out.push(item);
-    last = at;
+    lastEnd = at + duration;
   }
   return out;
 }

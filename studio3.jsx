@@ -10,6 +10,7 @@ import {
 } from "./edl.js";
 import { renderFrame } from "./frame.js";
 import { renderTemplatePreview } from "./preview-frame.js";
+import { drawTalkingHead } from "./talking-head.js";
 import { planGhostEdit } from "./ghost.js";
 import { createASRWorker, wordsToCues } from "./asr.js";
 import { KADR_TEMPLATES, KADR_EXAMPLES, templateById, planBeats } from "./templates.js";
@@ -577,18 +578,12 @@ async function exportMp4() {
 // Живые превью шаблонов: тот же renderFrame, что и в экспорте.
 // Это не картинки-заглушки — каждый кадр собран из EDL шаблона.
 async function loadDemoFrames() {
-  const video = document.createElement("video");
-  video.src = "./demo-portrait.mp4"; video.muted = true; video.playsInline = true;
-  try {
-    await new Promise((res, rej) => { video.onloadeddata = res; video.onerror = rej; });
-    for (const t of [0.25, 1.1, 2.3]) {
-      await new Promise(res => { video.onseeked = res; video.currentTime = Math.min(t, Math.max(0, video.duration - 0.05)); });
-      const frame = document.createElement("canvas");
-      frame.width = 216; frame.height = 384;
-      frame.getContext("2d").drawImage(video, 0, 0, 216, 384);
-      state.demoFrames.push(frame);
-    }
-  } catch {}
+  for (const t of [0.25, 1.1, 2.3]) {
+    const frame = document.createElement("canvas");
+    frame.width = 216; frame.height = 384;
+    drawTalkingHead(frame.getContext("2d"), 216, 384, t);
+    state.demoFrames.push(frame);
+  }
 }
 
 function previewSource(ctx, rect, localT = 0) {

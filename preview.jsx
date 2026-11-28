@@ -1,5 +1,6 @@
 // Кадр 3.0: предпоказ / мэшап. Живая смена шаблонов на одном демо-дубле.
 import { renderTemplatePreview } from "./preview-frame.js";
+import { drawTalkingHead } from "./talking-head.js";
 import { templateById } from "./templates.js";
 import { hydrateIcons } from "./icons.js";
 
@@ -8,17 +9,11 @@ const SHOT = 2.4;
 const state = { frames: [], start: 0 };
 
 async function loadFrames() {
-  const video = document.createElement("video");
-  video.src = "./demo-portrait.mp4"; video.muted = true; video.playsInline = true;
-  try {
-    await new Promise((res, rej) => { video.onloadeddata = res; video.onerror = rej; });
-    for (const t of [0.25, 1.1, 2.3]) {
-      await new Promise(res => { video.onseeked = res; video.currentTime = Math.min(t, Math.max(0, video.duration - 0.05)); });
-      const c = document.createElement("canvas"); c.width = 216; c.height = 384;
-      c.getContext("2d").drawImage(video, 0, 0, 216, 384);
-      state.frames.push(c);
-    }
-  } catch {}
+  for (const t of [0.25, 1.1, 2.3]) {
+    const c = document.createElement("canvas"); c.width = 216; c.height = 384;
+    drawTalkingHead(c.getContext("2d"), 216, 384, t);
+    state.frames.push(c);
+  }
 }
 
 function frameAt(t) {
