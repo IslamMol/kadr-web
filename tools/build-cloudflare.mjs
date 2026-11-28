@@ -1,6 +1,6 @@
 // Кадр 3.0: подготовка папки site для Cloudflare Pages без Python и без Windows.
 // Используется как build command в Cloudflare: node tools/build-cloudflare.mjs
-import { mkdir, copyFile, access, rm } from "node:fs/promises";
+import { mkdir, copyFile, access, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -15,7 +15,7 @@ const copyIfExists = async (from, to) => {
 
 // Уже собранные HTML-файлы хранятся в репозитории — сборка JS не нужна.
 const copies = [
-  ["kadr.html", "index.html"],
+  ["kadr.html", "kadr.html"],
   ["studio3.html", "studio3.html"],
   ["preview.html", "preview.html"],
   ["preview-cover.png", "preview-cover.png"],
@@ -23,6 +23,11 @@ const copies = [
   ["manifest.webmanifest", "manifest.webmanifest"],
 ];
 for (const [from, to] of copies) if (!(await copyIfExists(from, to))) throw new Error(`Нет файла ${from}`);
+
+// Корень сайта — новая студия. Старый редактор остаётся по /kadr.html.
+await writeFile(path.join(site, "index.html"),
+  '<!doctype html><html lang="ru"><head><meta charset="UTF-8"><meta http-equiv="refresh" content="0; url=./studio3.html"><title>Кадр 3.0</title></head><body><p>Открываем студию… <a href="./studio3.html">Кадр 3.0</a></p><script>location.replace("./studio3.html")</script></body></html>',
+  "utf8");
 
 const required = [
   "site/index.html", "site/studio3.html", "site/preview.html",
