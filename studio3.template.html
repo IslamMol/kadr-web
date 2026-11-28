@@ -23,13 +23,13 @@
         <div class="quick-start">
           <strong>С видео до ролика — три шага</strong>
           <span><b data-icon="upload"></b> Видео</span>
-          <span><b data-icon="captions"></b> Слова и сцены</span>
+          <span><b data-icon="captions"></b> Субтитры</span>
           <span><b data-icon="sparkles"></b> Шаблон</span>
         </div>
 
         <nav class="editor-tabs" aria-label="Шаги редактора">
           <button type="button" data-goto="step-video" aria-pressed="true"><span data-icon="upload"></span> Видео</button>
-          <button type="button" data-goto="step-words" aria-pressed="false"><span data-icon="captions"></span> Слова</button>
+          <button type="button" data-goto="step-captions" aria-pressed="false"><span data-icon="captions"></span> Субтитры</button>
           <button type="button" data-goto="step-look" aria-pressed="false"><span data-icon="sparkles"></span> Вид</button>
         </nav>
 
@@ -43,6 +43,10 @@
             <label>Начало, сек<input id="in" type="number" min="0" step="0.1" value="0"></label>
             <label>Конец, сек<input id="out" type="number" min="0.2" step="0.1" value="30"></label>
           </div>
+        </div>
+
+        <div id="step-captions" class="section-block">
+          <div class="sec-title"><span class="step-num">2</span><strong>Субтитры</strong></div>
           <div class="row">
             <label>Язык речи
               <select id="language">
@@ -51,21 +55,18 @@
                 <option value="auto">Определить</option>
               </select>
             </label>
-            <label class="action-label">&nbsp;<button id="asr"><span data-icon="mic"></span> Распознать речь</button></label>
+            <label>Скорость / точность
+              <select id="model">
+                <option value="small">Точно · small</option>
+                <option value="tiny">Быстро · tiny</option>
+              </select>
+            </label>
           </div>
+          <button id="asr" class="primary soft"><span data-icon="mic"></span> Распознать речь</button>
           <input id="srt" type="file" accept=".srt,text/plain" hidden>
           <button id="srt-load" class="small wide"><span data-icon="file"></span> Загрузить SRT</button>
-        </div>
-
-        <div id="step-words" class="section-block">
-          <div class="sec-title"><span class="step-num">2</span><strong>Слова и сцены</strong></div>
-          <label>Фразы, каждую с новой строки<textarea id="words" placeholder="Маленький перерыв&#10;Для больших идей">Маленький перерыв
-Для больших идей</textarea></label>
-          <div id="cues" class="cue-list"></div>
-          <p class="hint"><span data-icon="layers"></span> Сцены на таймлайне — перетащи плашку мышью</p>
-          <div id="timeline" class="timeline"><span class="playhead"></span></div>
-          <div id="scenes" class="scene-list"></div>
-          <button id="add-scene" class="small wide"><span data-icon="plus"></span> Добавить сцену на текущем кадре</button>
+          <p class="hint">Слова и границы фраз можно поправить прямо в списке — без ручного ввода текста.</p>
+          <div id="cues" class="cue-editor"></div>
         </div>
 
         <div id="step-look" class="section-block">

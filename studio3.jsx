@@ -82,18 +82,10 @@ function buildEdl() {
       ...c, template: captionTemplate, keyword: String(c.text || "").split(/\s+/)[0] || "",
     })));
   } else {
-    // Ручной режим: фразы распределяются равномерно по выбранному куску.
-    const lines = ($("#words")?.value || "").split(/\n+/).map(x => x.trim()).filter(Boolean).slice(0, 30);
-    const step = lines.length ? span / lines.length : 0;
+    // Пока речь не распознана — просто видео без выдуманных фраз.
     clips = [{ id: "main", src: "video", in: start, out: end }];
     state.originalBounds = clips.map(c => c.out);
-    cues = lines.map((text, i) => ({
-      id: `cue-${i + 1}`, start: i * step, end: (i + 1) * step,
-      text, template: captionTemplate, keyword: text.split(/\s+/)[0] || "",
-      words: text.split(/\s+/).filter(Boolean).map((w, n, all) => ({
-        text: w, start: i * step + step * n / all.length, end: i * step + step * (n + 1) / all.length,
-      })),
-    }));
+    cues = [];
   }
 
   const graphics = [...planBeats(cues, tpl.id), ...state.manualGraphics].slice(0, 12);
@@ -123,10 +115,84 @@ function buildEdl() {
 
 function renderCues() {
   const box = $("#cues");
+  if (!box) return;
   if (!state.cues?.length) { box.innerHTML = ""; return; }
-  box.innerHTML = state.cues.map((c, i) =>
-    `<label class="cue-row"><input type="checkbox" data-cue="${c.id}" ${state.excluded.has(c.id) ? "" : "checked"}><span>${String(c.text || "").slice(0, 90)}</span><time>${c.start.toFixed(1)}с</time></label>`
-  ).join("");
+  box.innerHTML = state.cues.map((c, i) => `
+    <div class="cue-editor-row" data-cue="${c.id}">
+      <div class="cue-top">
+        <button type="button" class="cue-jump" data-act="jump" aria-label="Перейти к фразе">${c.start.toFixed(1)}с</button>
+        <input type="number" class="cue-time" data-field="start" step="0.01" min="0" value="${c.start.toFixed(2)}" aria-label="Начало фразы">
+        <span class="cue-dash">—</span>
+        <input type="number" class="cue-time" data-field="end" step="0.01" min="0" value="${c.end.toFixed(2)}" aria-label="Конец фразы">
+        <button type="button" class="cue-icon" data-act="delete" aria-label="Удалить фразу">${icon("trash", 13)}</button>
+      </div>
+      <input type="text" class="cue-text" data-field="text" value="${esc(c.text)}" aria-label="Текст фразы">
+      <div class="cue-words">${(c.words || []).map(w => `<span class="cue-word">${esc(w.text)}<small>${w.start.toFixed(2)}</small></span>`).join("")}</div>
+      <div class="cue-actions">
+        <button type="button" class="small" data-act="split" ${i === state.cues.length - 1 ? "disabled" : ""}><span data-icon="scissors"></span> Разделить здесь</button>
+        <button type="button" class="small" data-act="merge" ${i === state.cues.length - 1 ? "disabled" : ""}>Слить со следующей</button>
+      </div>
+    </div>`).join("");
+  hydrateIcons(box);
+}
+
+function updateCueField(id, field, value) {
+  const c = state.cues.find(x => x.id === id);
+  if (!c) return;
+  if (field === "text") {
+    c.text = String(value || "").trim().slice(0, 160);
+    c.words = recomputeWords(c);
+  } else {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return;
+    if (field === "start") {
+      const delta = Math.max(0, n) - c.start;
+      c.start += delta; c.end = Math.max(c.start + 0.04, c.end + delta);
+      c.words = c.words.map(w => ({ ...w, start: w.start + delta, end: w.end + delta }));
+    } else {
+      const old = Math.max(0.04, c.end - c.start);
+      c.end = Math.max(c.start + 0.04, n);
+      const ratio = (c.end - c.start) / old;
+      c.words = c.words.map(w => ({ ...w,
+        start: c.start + (w.start - c.start) * ratio,
+        end: c.start + (w.end - c.start) * ratio,
+      }));
+    }
+  }
+  buildEdl();
+}
+
+function splitCue(id) {
+  const i = state.cues.findIndex(x => x.id === id);
+  if (i < 0) return;
+  const c = state.cues[i];
+  const words = c.words.length ? c.words : recomputeWords(c);
+  const idx = Math.max(1, Math.min(words.length - 1, Math.round(words.length / 2)));
+  if (words.length < 2) return;
+  const at = words[idx].start;
+  const a = { ...c, id: `${c.id}-a`, end: at, words: words.slice(0, idx) };
+  const b = { ...c, id: `${c.id}-b`, start: at, words: words.slice(idx) };
+  a.text = a.words.map(w => w.text).join(" ");
+  b.text = b.words.map(w => w.text).join(" ");
+  if (!a.text || !b.text) return;
+  state.cues.splice(i, 1, a, b);
+  buildEdl();
+}
+
+function mergeCue(id) {
+  const i = state.cues.findIndex(x => x.id === id);
+  if (i < 0 || i >= state.cues.length - 1) return;
+  const a = state.cues[i], b = state.cues[i + 1];
+  a.end = b.end;
+  a.text = `${a.text} ${b.text}`.replace(/\s+/g, " ").trim();
+  a.words = [...a.words, ...b.words].sort((x, y) => x.start - y.start);
+  state.cues.splice(i + 1, 1);
+  buildEdl();
+}
+
+function deleteCue(id) {
+  state.cues = state.cues.filter(c => c.id !== id);
+  buildEdl();
 }
 
 const esc = (s) => String(s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -272,7 +338,7 @@ async function saveProject() {
       edl: state.edl,
       editor: {
         template: state.template, cues: state.cues || [], excluded: [...state.excluded],
-        words: $("#words").value, manualGraphics: state.manualGraphics, cutDeltas: state.cutDeltas,
+        manualGraphics: state.manualGraphics, cutDeltas: state.cutDeltas,
         start: $("#in").value, end: $("#out").value,
       },
     }, state.file);
@@ -295,7 +361,6 @@ async function openProject(file) {
     state.excluded = new Set(project.editor.excluded);
     state.manualGraphics = project.editor.manualGraphics;
     state.cutDeltas = project.editor.cutDeltas || {};
-    $("#words").value = project.editor.words;
     $("#in").value = String(project.editor.start);
     $("#out").value = String(project.editor.end);
     state.edl = project.edl;
@@ -333,6 +398,23 @@ function parseSrt(raw) {
   });
 }
 
+// Лёгкая постобработка распознанного текста: убираем мусорное начало,
+// приводим регистр и пунктуацию. Слова и их тайминги не трогаем.
+function improveCue(cue) {
+  let text = String(cue.text || "").replace(/\s+/g, " ").trim();
+  text = text.replace(/^(э|эм|мм|ну|аа|короче)[,\s]+/iu, "").trim();
+  if (text && !/[.!?…]$/.test(text)) text += ".";
+  if (text) text = text[0].toLocaleUpperCase("ru") + text.slice(1);
+  return { ...cue, text, words: (cue.words || []).map(w => ({ ...w, text: String(w.text || "").trim() })).filter(w => w.text) };
+}
+
+function recomputeWords(cue) {
+  const words = String(cue.text || "").trim().split(/\s+/).filter(Boolean);
+  const dur = Math.max(0.04, cue.end - cue.start);
+  const step = dur / Math.max(1, words.length);
+  return words.map((text, i) => ({ text, start: cue.start + step * i, end: cue.start + step * (i + 1), index: i }));
+}
+
 async function transcribe() {
   if (!state.file || state.asrBusy) return;
   state.asrBusy = true;
@@ -361,12 +443,11 @@ async function transcribe() {
         else if (data.type === "error") { worker.terminate(); revoke(); reject(new Error("Не удалось запустить модель. Проверь интернет; можно загрузить SRT.")); }
       };
       worker.onerror = () => { worker.terminate(); revoke(); reject(new Error("Модель не запустилась. Проверь интернет и память.")); };
-      worker.postMessage({ audio, language: $("#language").value }, [audio.buffer]);
+      worker.postMessage({ audio, language: $("#language").value, model: $("#model").value }, [audio.buffer]);
     });
     const parsed = wordsToCues(result, state.duration);
-    state.cues = parsed.cues; state.excluded = new Set();
-    $("#words").value = parsed.cues.map(c => c.text).join("\n");
-    $("#status").textContent = `Распознано ${parsed.cues.length} фраз со словами. Дубли убираются автоматически.`;
+    state.cues = parsed.cues.map(improveCue); state.excluded = new Set();
+    $("#status").textContent = `Распознано ${state.cues.length} фраз со словами. Границы и текст можно поправить ниже.`;
     buildEdl();
   } catch (e) {
     $("#status").textContent = e?.message || "Не удалось распознать речь.";
@@ -597,7 +678,6 @@ async function loadExample(id) {
     state.template = ex.template;
     state.cues = ex.cues.map(c => ({ ...c, id: c.id || `ex-${Math.random().toString(36).slice(2, 8)}` }));
     state.excluded = new Set();
-    $("#words").value = state.cues.map(c => c.text).join("\n");
     document.querySelectorAll("[data-template]").forEach(x => x.classList.toggle("active", x.dataset.template === ex.template));
     document.querySelectorAll("[data-example]").forEach(x => x.classList.toggle("active", x.dataset.example === id));
     $("#status").textContent = ex.note;
@@ -644,15 +724,25 @@ document.addEventListener("DOMContentLoaded", () => {
       const cues = parseSrt(raw).filter(c => c.start < (state.duration || Infinity));
       if (!cues.length) throw new Error("В SRT не найдено фраз с таймингом.");
       state.cues = cues; state.excluded = new Set();
-      $("#words").value = cues.map(c => c.text).join("\n");
       $("#status").textContent = `SRT загружен: ${cues.length} фраз.`;
       buildEdl();
     }).catch(err => { $("#status").textContent = err.message || "Не удалось прочитать SRT."; });
   });
   $("#cues").addEventListener("change", e => {
-    const id = e.target.dataset.cue; if (!id) return;
-    if (e.target.checked) state.excluded.delete(id); else state.excluded.add(id);
-    buildEdl();
+    const row = e.target.closest("[data-cue]");
+    if (!row || !e.target.dataset.field) return;
+    updateCueField(row.dataset.cue, e.target.dataset.field, e.target.value);
+  });
+  $("#cues").addEventListener("click", e => {
+    const row = e.target.closest("[data-cue]"); if (!row) return;
+    const act = e.target.closest("[data-act]")?.dataset.act;
+    if (!act) return;
+    if (act === "jump") {
+      const cue = state.cues.find(c => c.id === row.dataset.cue);
+      if (cue) jumpTo(cue.start);
+    } else if (act === "delete") deleteCue(row.dataset.cue);
+    else if (act === "split") splitCue(row.dataset.cue);
+    else if (act === "merge") mergeCue(row.dataset.cue);
   });
   $("#filters").addEventListener("click", e => {
     const b = e.target.closest("[data-filter]"); if (!b) return;
@@ -671,21 +761,6 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#examples").addEventListener("click", e => {
     const b = e.target.closest("[data-example]"); if (!b) return;
     loadExample(b.dataset.example);
-  });
-  $("#add-scene").addEventListener("click", addScene);
-  $("#scenes").addEventListener("change", e => {
-    const row = e.target.closest("[data-scene]"); if (!row || !e.target.dataset.field) return;
-    updateScene(row.dataset.scene, e.target.dataset.field, e.target.value);
-  });
-  $("#scenes").addEventListener("click", e => {
-    const row = e.target.closest("[data-scene]"); if (!row) return;
-    const act = e.target.dataset.act;
-    if (act === "delete") state.manualGraphics = state.manualGraphics.filter(g => g.id !== row.dataset.scene);
-    else if (act === "jump") {
-      const g = state.manualGraphics.find(x => x.id === row.dataset.scene);
-      if (g) { state.t = Math.min(state.edl.duration, g.at); $("#range").value = String(state.t); }
-    }
-    buildEdl();
   });
   $("#save-project").addEventListener("click", saveProject);
   $("#open-project").addEventListener("click", () => $("#project-file").click());
