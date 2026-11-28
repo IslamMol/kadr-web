@@ -9,6 +9,7 @@ import {
   normalizeEdl, outputTimeForSource, sourceTimeAt, sourceSpanAt, frameState, mapCuesToOutput, LOOKS, CAPTION_TEMPLATES, GRAPHIC_TYPES,
 } from "./edl.js";
 import { renderFrame } from "./frame.js";
+import { renderTemplatePreview } from "./preview-frame.js";
 import { planGhostEdit } from "./ghost.js";
 import { createASRWorker, wordsToCues } from "./asr.js";
 import { KADR_TEMPLATES, KADR_EXAMPLES, templateById, planBeats } from "./templates.js";
@@ -609,54 +610,33 @@ function previewSource(ctx, rect, localT = 0) {
 
 let previewStart = 0;
 
-function previewEdl(tpl, cues) {
-  const grain = ["cinematic", "halftone", "ink", "graph"].includes(tpl.look) ? 0.12 : 0.04;
-  return normalizeEdl({
-    output: { width: 216, height: 384, fps: 30 },
-    clips: [{ id: "preview", src: "video", in: 0, out: 2.6 }],
-    captions: cues.map(c => ({ ...c, template: tpl.caption })),
-    graphics: [{ id: "preview-beat", type: tpl.graphic, at: 1.32, duration: 1.0,
-      label: cues[0]?.text || tpl.sample, value: "", steps: [], template: tpl.caption }],
-    look: { preset: tpl.look, accent: tpl.accent, grain, vignette: 0.18 },
-  });
+function previewFrameAt(t) {
+  if (!state.demoFrames.length) return null;
+  return state.demoFrames[Math.floor(Math.abs(t) * 1.5) % state.demoFrames.length];
 }
 
-function drawPreview(canvas, edl, t) {
-  if (!canvas) return;
-  try { renderFrame(canvas.getContext("2d"), edl, t, { video: { draw: previewSource } }); } catch {}
+function drawPreview(canvas, tpl, t) {
+  if (!canvas || !tpl) return;
+  try { renderTemplatePreview(canvas.getContext("2d"), tpl, t, previewFrameAt(t)); } catch {}
 }
 
-function registerPreview(key, canvas, edl, stillT) {
-  if (!canvas) return;
-  state.previewEdls[key] = { canvas, edl, t: stillT };
-  drawPreview(canvas, edl, stillT);
+function registerPreview(key, canvas, tpl, stillT) {
+  if (!canvas || !tpl) return;
+  state.previewEdls[key] = { canvas, tpl, t: stillT };
+  drawPreview(canvas, tpl, stillT);
 }
 
 function renderTemplatePreviews() {
   for (const tpl of KADR_TEMPLATES) {
     const canvas = document.querySelector(`[data-tpl-preview="${tpl.id}"]`);
-    if (!canvas) continue;
-    // В превью держим короткие фразы: длинные образцы только переполняют 9:16-карточку.
-    const words = tpl.sample.split(/\s+/).filter(Boolean).slice(0, 2);
-    const step = 1.2 / Math.max(1, words.length);
-    const cues = [
-      { id: "a", start: 0.05, end: 1.25, text: words.join(" "), template: tpl.caption,
-        words: words.map((text, i) => ({ text, start: 0.05 + step * i, end: 0.05 + step * (i + 1) })) },
-      { id: "b", start: 1.3, end: 2.55, text: "39%", template: tpl.caption,
-        words: [{ text: "39%", start: 1.3, end: 2.55 }] },
-    ];
-    const edl = previewEdl(tpl, cues);
-    registerPreview(tpl.id, canvas, edl, Math.min(1.7, (edl.graphics[0]?.at || 0.5) + 0.12));
+    if (canvas) registerPreview(tpl.id, canvas, tpl, 1.2);
   }
 }
 
 function renderExamplePreviews() {
   for (const ex of KADR_EXAMPLES) {
     const canvas = document.querySelector(`[data-ex-preview="${ex.id}"]`);
-    if (!canvas) continue;
-    const tpl = templateById(ex.template);
-    const edl = previewEdl(tpl, ex.cues);
-    registerPreview(`ex:${ex.id}`, canvas, edl, 1.35);
+    if (canvas) registerPreview(`ex:${ex.id}`, canvas, templateById(ex.template), 1.2);
   }
 }
 
@@ -669,7 +649,7 @@ function startPreviewLoop() {
   if (reduced) {
     canvases.forEach(el => {
       const p = state.previewEdls[keyOf(el)];
-      if (p) drawPreview(p.canvas, p.edl, p.t);
+      if (p) drawPreview(p.canvas, p.tpl, p.t);
     });
     return;
   }
@@ -694,8 +674,8 @@ function startPreviewLoop() {
     for (const key of state.previewVisible) {
       const p = state.previewEdls[key];
       if (!p) continue;
-      const dur = Math.max(0.1, p.edl.duration);
-      drawPreview(p.canvas, p.edl, ((elapsed % dur) + dur) % dur);
+      const dur = 2.4;
+      drawPreview(p.canvas, p.tpl, ((elapsed % dur) + dur) % dur);
     }
   };
   state.previewTimer = requestAnimationFrame(loop);
